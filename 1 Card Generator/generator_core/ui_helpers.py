@@ -42,6 +42,24 @@ def responsive_column_count(width: int, preferred_columns: int, min_item_width: 
     return max(1, min(preferred_columns, width // min_item_width))
 
 
+def clamp_sash_position(position: int, total_width: int, min_form_width: int, min_preview_width: int) -> int:
+    if total_width <= 1:
+        return position
+
+    min_form_width = max(1, min_form_width)
+    min_preview_width = max(1, min_preview_width)
+    max_form_width = max(1, total_width - min_preview_width)
+    if max_form_width < min_form_width:
+        return max_form_width
+    return min(max(position, min_form_width), max_form_width)
+
+
+def default_sash_position(total_width: int, preview_ratio: float, min_form_width: int, min_preview_width: int) -> int:
+    preview_ratio = min(max(preview_ratio, 0.05), 0.8)
+    position = round(total_width * (1 - preview_ratio))
+    return clamp_sash_position(position, total_width, min_form_width, min_preview_width)
+
+
 class ResponsiveCheckboxGroup(ttk.Frame):
     def __init__(self, master, vars_by_key, labels=None, tooltips=None, preferred_columns=3, min_item_width=220, **kwargs):
         super().__init__(master, **kwargs)

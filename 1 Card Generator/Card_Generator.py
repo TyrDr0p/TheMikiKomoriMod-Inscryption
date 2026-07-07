@@ -58,11 +58,18 @@ from generator_core.ui_helpers import (
     CollapsibleSection,
     ResponsiveCheckboxGroup,
     ToolTip,
+    clamp_sash_position,
+    default_sash_position,
     choose_audio,
     choose_image,
     save_json_file,
     update_json_preview,
 )
+
+
+FORM_PANE_MIN_WIDTH = 700
+PREVIEW_PANE_MIN_WIDTH = 220
+PREVIEW_PANE_DEFAULT_RATIO = 0.20
 
 
 class GeneratorTab(ttk.Frame):
@@ -71,6 +78,8 @@ class GeneratorTab(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.status = tk.StringVar(value="")
+        self._pane_initialized = False
+        self._pane_layout_pending = False
         self._build_layout()
 
     def _build_layout(self):
@@ -80,10 +89,13 @@ class GeneratorTab(ttk.Frame):
         self.panes.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
         self.form = ScrollableFrame(self.panes)
-        self.panes.add(self.form, weight=3)
+        self.panes.add(self.form, weight=4)
 
         right = ttk.Frame(self.panes)
-        self.panes.add(right, weight=2)
+        self.panes.add(right, weight=1)
+        self.panes.bind("<Configure>", self._schedule_pane_layout, add="+")
+        self.panes.bind("<B1-Motion>", self._schedule_pane_layout, add="+")
+        self.panes.bind("<ButtonRelease-1>", self._schedule_pane_layout, add="+")
         right.rowconfigure(1, weight=1)
         right.columnconfigure(0, weight=1)
         ttk.Label(right, text="JSON Preview", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky=tk.W)
@@ -91,16 +103,54 @@ class GeneratorTab(ttk.Frame):
         preview_frame.grid(row=1, column=0, sticky="nsew", pady=(5, 5))
         preview_frame.rowconfigure(0, weight=1)
         preview_frame.columnconfigure(0, weight=1)
-        self.preview = tk.Text(preview_frame, width=58, height=30, wrap=tk.NONE, state=tk.DISABLED)
+        self.preview = tk.Text(preview_frame, width=34, height=30, wrap=tk.NONE, state=tk.DISABLED)
         preview_y = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self.preview.yview)
         preview_x = ttk.Scrollbar(preview_frame, orient=tk.HORIZONTAL, command=self.preview.xview)
         self.preview.configure(yscrollcommand=preview_y.set, xscrollcommand=preview_x.set)
         self.preview.grid(row=0, column=0, sticky="nsew")
         preview_y.grid(row=0, column=1, sticky="ns")
         preview_x.grid(row=1, column=0, sticky="ew")
-        ttk.Label(right, textvariable=self.status, style="Status.TLabel", wraplength=520).grid(
+        self.status_label = ttk.Label(right, textvariable=self.status, style="Status.TLabel", wraplength=260)
+        self.status_label.grid(
             row=2, column=0, sticky=tk.W
         )
+        right.bind(
+            "<Configure>",
+            lambda event: self.status_label.configure(wraplength=max(180, event.width - 10)),
+            add="+",
+        )
+        self.after_idle(self._apply_pane_layout)
+
+    def _schedule_pane_layout(self, _event=None):
+        if self._pane_layout_pending:
+            return
+        self._pane_layout_pending = True
+        self.after_idle(self._apply_pane_layout)
+
+    def _apply_pane_layout(self):
+        self._pane_layout_pending = False
+        total_width = self.panes.winfo_width()
+        if total_width <= 1:
+            return
+
+        if self._pane_initialized:
+            target_position = clamp_sash_position(
+                self.panes.sashpos(0),
+                total_width,
+                FORM_PANE_MIN_WIDTH,
+                PREVIEW_PANE_MIN_WIDTH,
+            )
+        else:
+            target_position = default_sash_position(
+                total_width,
+                PREVIEW_PANE_DEFAULT_RATIO,
+                FORM_PANE_MIN_WIDTH,
+                PREVIEW_PANE_MIN_WIDTH,
+            )
+            self._pane_initialized = True
+
+        if target_position != self.panes.sashpos(0):
+            self.panes.sashpos(0, target_position)
 
     def section(self, parent, row, title, expanded=True):
         section = CollapsibleSection(parent, title, expanded=expanded)
