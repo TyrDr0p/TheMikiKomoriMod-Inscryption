@@ -1,0 +1,99 @@
+name: Build Card Generator
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.os-name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os-name: windows
+            runner: windows-latest
+          - os-name: linux
+            runner: ubuntu-latest
+          - os-name: macos
+            runner: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-build.txt
+
+      - name: Install build dependencies
+        run: python -m pip install -r requirements-build.txt
+
+      - name: Compile generator
+        run: python -m py_compile "1 Card Generator/Card_Generator.py"
+
+      - name: Build executable package
+        run: python scripts/build_executable.py
+
+      - name: Upload executable package
+        uses: actions/upload-artifact@v7
+        with:
+          name: InscryptionCardGenerator-${{ matrix.os-name }}
+          path: release/*
+          if-no-files-found: error
+          compression-level: 9
+
+  rolling-release:
+    name: Update rolling prerelease
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: rolling
+      RELEASE_TITLE: Latest automated build
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download executable packages
+        uses: actions/download-artifact@v7
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Move rolling tag
+        run: |
+          git tag --force "$RELEASE_TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$RELEASE_TAG" --force
+
+      - name: Create or update rolling prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --title "$RELEASE_TITLE" \
+              --notes "Automated build for $GITHUB_SHA." \
+              --prerelease \
+              --latest=false
+          else
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_TITLE" \
+              --notes "Automated build for $GITHUB_SHA." \
+              --prerelease \
+              --latest=false \
+              --target "$GITHUB_SHA"
+          fi
+
+          gh release upload "$RELEASE_TAG" release-assets/* --clobber
