@@ -15,6 +15,7 @@ APP_NAME = "InscryptionCardGenerator"
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ENTRY_POINT = ROOT_DIR / "1 Card Generator" / "Card_Generator.py"
 SCHEMA_DIR = ROOT_DIR / "schemas" / "jsoncardloader"
+FONT_DIR = ROOT_DIR / "assets" / "fonts"
 BUILD_DIR = ROOT_DIR / "build" / "pyinstaller"
 PYINSTALLER_CACHE_DIR = ROOT_DIR / "build" / "pyinstaller-cache"
 DIST_DIR = ROOT_DIR / "dist"
@@ -62,6 +63,8 @@ def pyinstaller_command() -> list[str]:
         str(ROOT_DIR),
         "--add-data",
         f"{SCHEMA_DIR}{data_separator}schemas/jsoncardloader",
+        "--add-data",
+        f"{FONT_DIR}{data_separator}assets/fonts",
         str(ENTRY_POINT),
     ]
 
@@ -129,6 +132,9 @@ def main() -> int:
         return 1
     if not SCHEMA_DIR.exists():
         print(f"Schema directory not found: {SCHEMA_DIR}", file=sys.stderr)
+        return 1
+    if not FONT_DIR.exists():
+        print(f"Font directory not found: {FONT_DIR}", file=sys.stderr)
         return 1
 
     if shutil.which("upx") and current_os_tag() in {"windows", "linux"}:

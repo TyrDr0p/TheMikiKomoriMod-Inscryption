@@ -33,9 +33,11 @@ from generator_core.constants import (  # noqa: E402
     TRAIT_TOOLTIPS,
     TRAITS,
 )
+from generator_core.appearance import BUNDLED_FONT_FILES, PALETTES, bundled_font_paths  # noqa: E402
 from generator_core.scroll import mousewheel_units  # noqa: E402
 from generator_core.schemas import validate_output  # noqa: E402
 from generator_core.sigil_behavior import build_action, build_behavior_entry, merge_action  # noqa: E402
+from generator_core.ui_helpers import responsive_column_count  # noqa: E402
 
 
 class BuilderValidationTests(unittest.TestCase):
@@ -147,6 +149,22 @@ class ScrollTests(unittest.TestCase):
         self.assertEqual(-3, mousewheel_units(SimpleNamespace(num=4, delta=0)))
         self.assertEqual(3, mousewheel_units(SimpleNamespace(num=5, delta=0)))
         self.assertEqual(0, mousewheel_units(SimpleNamespace(delta=0)))
+
+
+class ResponsiveLayoutTests(unittest.TestCase):
+    def test_checkbox_columns_fit_available_width(self):
+        self.assertEqual(4, responsive_column_count(0, 4, 220))
+        self.assertEqual(4, responsive_column_count(1200, 4, 220))
+        self.assertEqual(2, responsive_column_count(520, 4, 220))
+        self.assertEqual(1, responsive_column_count(200, 4, 220))
+
+
+class AppearanceTests(unittest.TestCase):
+    def test_bundled_fonts_and_themes_are_available(self):
+        self.assertEqual(set(PALETTES), {"light", "dark"})
+        self.assertEqual(len(BUNDLED_FONT_FILES), len(bundled_font_paths()))
+        for path in bundled_font_paths():
+            self.assertTrue(path.exists(), path)
 
 
 class EnumOptionTests(unittest.TestCase):

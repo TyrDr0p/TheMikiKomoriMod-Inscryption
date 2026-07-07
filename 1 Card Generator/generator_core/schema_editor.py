@@ -44,7 +44,7 @@ class JSONSchemaTextEditor(ttk.Frame):
         ttk.Button(controls, text="Validate", command=self.show_validation).pack(side=tk.LEFT, padx=(6, 0))
         ttk.Button(controls, text="Reset Empty", command=lambda: self.set_value(default_for_schema(schema))).pack(side=tk.LEFT, padx=(6, 0))
         self.status = tk.StringVar(value="")
-        ttk.Label(self, textvariable=self.status, foreground="#6a3b00").pack(fill=tk.X, pady=(4, 0))
+        ttk.Label(self, textvariable=self.status, style="Status.TLabel").pack(fill=tk.X, pady=(4, 0))
         self.set_value(initial_value)
 
     def get_value(self):
@@ -83,4 +83,3 @@ class JSONSchemaTextEditor(ttk.Frame):
         message = "\n".join(error.message for error in errors[:8])
         self.status.set(f"{len(errors)} validation error(s).")
         messagebox.showerror("Behavior Validation Error", message)
-
