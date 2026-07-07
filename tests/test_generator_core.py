@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import sys
+import logging
+import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +38,12 @@ from generator_core.constants import (  # noqa: E402
     TRAITS,
 )
 from generator_core.appearance import BUNDLED_FONT_FILES, PALETTES, bundled_font_paths  # noqa: E402
+from generator_core.logging_config import (  # noqa: E402
+    LOG_NAME,
+    configure_debug_logging,
+    debug_log_path,
+    parse_cli_args,
+)
 from generator_core.scroll import mousewheel_units  # noqa: E402
 from generator_core.schemas import validate_output  # noqa: E402
 from generator_core.sigil_behavior import build_action, build_behavior_entry, merge_action  # noqa: E402
@@ -174,6 +184,42 @@ class AppearanceTests(unittest.TestCase):
         self.assertEqual(len(BUNDLED_FONT_FILES), len(bundled_font_paths()))
         for path in bundled_font_paths():
             self.assertTrue(path.exists(), path)
+
+
+class DebugLoggingTests(unittest.TestCase):
+    def tearDown(self):
+        root_logger = logging.getLogger()
+        for handler in list(root_logger.handlers):
+            root_logger.removeHandler(handler)
+            handler.close()
+
+    def test_debug_cli_switch_is_parsed(self):
+        self.assertTrue(parse_cli_args(["--debug"]).debug)
+        self.assertFalse(parse_cli_args([]).debug)
+
+    def test_debug_log_path_uses_timestamped_filename(self):
+        path = debug_log_path(Path("logs"), datetime(2026, 7, 6, 21, 28, 0))
+        self.assertEqual(Path("logs") / f"{LOG_NAME}-debug-20260706-212800.log", path)
+
+    def test_debug_logging_writes_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = configure_debug_logging(True, Path(directory), console=False)
+            logging.getLogger("test.debug").debug("debug file message")
+            for handler in logging.getLogger().handlers:
+                handler.flush()
+            self.assertTrue(path.exists())
+            content = path.read_text(encoding="utf-8")
+            self.assertIn("Debug logging enabled", content)
+            self.assertIn("debug file message", content)
+
+    def test_debug_logging_works_without_console_streams(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with mock.patch("sys.stdout", None), mock.patch("sys.stderr", None):
+                path = configure_debug_logging(True, Path(directory))
+                logging.getLogger("test.debug").debug("no console message")
+                for handler in logging.getLogger().handlers:
+                    handler.flush()
+            self.assertIn("no console message", path.read_text(encoding="utf-8"))
 
 
 class EnumOptionTests(unittest.TestCase):

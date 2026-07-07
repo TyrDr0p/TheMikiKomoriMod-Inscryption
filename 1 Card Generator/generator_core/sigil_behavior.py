@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import copy
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 ARRAY_ACTIONS = {
@@ -42,6 +46,7 @@ def build_trigger(trigger_type: str, condition: str = "", health_level: str = ""
     trigger = {"triggerType": trigger_type}
     maybe_set(trigger, "activatesForCardsWithCondition", condition.strip())
     maybe_set(trigger, "amountOfHealth", health_level.strip())
+    logger.debug("Built Configils trigger=%s", trigger)
     return trigger
 
 
@@ -54,13 +59,22 @@ def build_behavior_entry(
     action_type: str,
     fields: dict,
 ) -> dict:
+    logger.debug(
+        "Building Configils behavior trigger_type=%s action_type=%s action_order=%s fields=%s",
+        trigger_type,
+        action_type,
+        action_order,
+        fields,
+    )
     entry = {"trigger": build_trigger(trigger_type, trigger_condition, health_level)}
     maybe_set(entry, "actionOrder", action_order or [])
     merge_action(entry, build_action(action_type, fields))
+    logger.debug("Built Configils behavior entry=%s", entry)
     return entry
 
 
 def build_action(action_type: str, fields: dict) -> dict:
+    logger.debug("Building Configils action action_type=%s fields=%s", action_type, fields)
     condition = fields.get("condition", "")
     primary_slot = slot(fields.get("slot_index", ""), fields.get("slot_opponent", False))
     secondary_slot = slot(fields.get("secondary_slot_index", ""), fields.get("secondary_slot_opponent", False))
@@ -70,7 +84,9 @@ def build_action(action_type: str, fields: dict) -> dict:
         item = with_condition({"slot": primary_slot, "card": named_card}, condition)
         if fields.get("replace"):
             item["replace"] = "true"
-        return {"placeCards": [item]}
+        action = {"placeCards": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "buffCards":
         item = with_condition({"slot": primary_slot}, condition)
@@ -84,45 +100,63 @@ def build_action(action_type: str, fields: dict) -> dict:
         remove_ability = fields.get("remove_ability", "").strip()
         if remove_ability:
             item["removeAbilities"] = [remove_ability]
-        return {"buffCards": [item]}
+        action = {"buffCards": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "transformCards":
         item = with_condition({"slot": primary_slot, "card": named_card}, condition)
         maybe_set(item, "targetCard", fields.get("target_card", "").strip())
-        return {"transformCards": [item]}
+        action = {"transformCards": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "damageSlots":
         item = with_condition({"slot": primary_slot}, condition)
         maybe_set(item, "damage", fields.get("damage", "").strip())
-        return {"damageSlots": [item]}
+        action = {"damageSlots": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "attackSlots":
         item = with_condition({"attackerSlot": primary_slot, "victimSlot": secondary_slot}, condition)
-        return {"attackSlots": [item]}
+        action = {"attackSlots": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "extraAttacks":
         item = {"attackingSlot": primary_slot, "slotsToAttack": [secondary_slot]}
-        return {"extraAttacks": [item]}
+        action = {"extraAttacks": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "gainCurrency":
         item = with_condition({}, condition)
         maybe_set(item, "bones", fields.get("bones", "").strip())
         maybe_set(item, "energy", fields.get("energy", "").strip())
         maybe_set(item, "foils", fields.get("foils", "").strip())
-        return {"gainCurrency": item}
+        action = {"gainCurrency": item}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "dealScaleDamage":
         item = with_condition({}, condition)
         maybe_set(item, "damage", fields.get("damage", "").strip())
-        return {"dealScaleDamage": item}
+        action = {"dealScaleDamage": item}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "drawCards":
-        return {"drawCards": [with_condition({"card": named_card}, condition)]}
+        action = {"drawCards": [with_condition({"card": named_card}, condition)]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "chooseSlots":
         item = {}
         maybe_set(item, "slotChooseableOnCondition", condition.strip())
-        return {"chooseSlots": [item]}
+        action = {"chooseSlots": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "moveCards":
         item = with_condition({"moveFromSlot": primary_slot, "moveToSlot": secondary_slot}, condition)
@@ -131,7 +165,9 @@ def build_action(action_type: str, fields: dict) -> dict:
             item["strafe"] = {"direction": direction, "flipSigil": bool_text(fields.get("flip_sigil", False))}
         if fields.get("replace"):
             item["replace"] = "true"
-        return {"moveCards": [item]}
+        action = {"moveCards": [item]}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
     if action_type == "showMessage":
         item = {}
@@ -140,12 +176,16 @@ def build_action(action_type: str, fields: dict) -> dict:
         maybe_set(item, "emotion", fields.get("message_emotion", "").strip())
         maybe_set(item, "letterAnimation", fields.get("letter_animation", "").strip())
         maybe_set(item, "speaker", fields.get("speaker", "").strip())
-        return {"showMessage": item}
+        action = {"showMessage": item}
+        logger.debug("Built Configils action=%s", action)
+        return action
 
+    logger.error("Unknown Configils action type: %s", action_type)
     raise ValueError(f"Unknown Configils action type: {action_type}")
 
 
 def merge_action(entry: dict, action: dict) -> dict:
+    logger.debug("Merging Configils action into entry action=%s before=%s", action, entry)
     for key, value in action.items():
         if key in ARRAY_ACTIONS:
             entry.setdefault(key, [])
@@ -154,4 +194,5 @@ def merge_action(entry: dict, action: dict) -> dict:
             entry[key].update(copy.deepcopy(value))
         else:
             entry[key] = copy.deepcopy(value)
+    logger.debug("Merged Configils entry=%s", entry)
     return entry
