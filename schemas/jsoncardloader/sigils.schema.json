@@ -1,0 +1,923 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1663363585.json",
+  "title": "Root",
+  "type": "object",
+  "required": [
+    "name",
+    "GUID",
+    "abilityBehaviour"
+  ],
+  "properties": {
+    "name": {
+      "$id": "#root/name",
+      "title": "Name",
+      "type": "string",
+      "default": "",
+      "pattern": "^.*$"
+    },
+    "GUID": {
+      "$id": "#root/GUID",
+      "title": "Guid",
+      "type": "string",
+      "default": "",
+      "pattern": "^.*$"
+    },
+    "description": {
+      "$id": "#root/description",
+      "title": "Description",
+      "type": "string",
+      "default": "",
+      "pattern": "^.*$"
+    },
+    "metaCategories": {
+      "$id": "#root/metaCategories",
+      "title": "Metacategories",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$id": "#root/metaCategories/items",
+        "title": "Items",
+        "type": "string",
+        "default": "",
+        "pattern": "^.*$"
+      }
+    },
+    "texture": {
+      "$id": "#root/texture",
+      "title": "Texture",
+      "type": "string",
+      "default": "",
+      "pattern": "^.*$"
+    },
+    "pixelTexture": {
+      "$id": "#root/pixelTexture",
+      "title": "Pixeltexture",
+      "type": "string",
+      "default": "",
+      "pattern": "^.*$"
+    },
+    "powerLevel": {
+      "$id": "#root/powerLevel",
+      "title": "Powerlevel",
+      "type": "integer",
+      "default": 0
+    },
+    "priority": {
+      "$id": "#root/priority",
+      "title": "Priority",
+      "type": "integer",
+      "default": 0
+    },
+    "opponentUsable": {
+      "$id": "#root/opponentUsable",
+      "title": "Opponentusable",
+      "type": "boolean",
+      "default": true
+    },
+    "canStack": {
+      "$id": "#root/canStack",
+      "title": "Canstack",
+      "type": "boolean",
+      "default": true
+    },
+    "activationCost": {
+      "$id": "#root/activationCost",
+      "title": "Activationcost",
+      "type": "object",
+      "properties": {
+        "bonesCost": {
+          "$id": "#root/activationCost/bonesCost",
+          "title": "Bonescost",
+          "type": "integer",
+          "default": 0
+        },
+        "energyCost": {
+          "$id": "#root/activationCost/energyCost",
+          "title": "Energycost",
+          "type": "integer",
+          "default": 0
+        },
+        "bloodCost": {
+          "$id": "#root/activationCost/bloodCost",
+          "title": "Bloodcost",
+          "type": "integer",
+          "default": 0
+        },
+        "gemsCost": {
+          "description": "The gems cost of the Sigil/Special Ability",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Green",
+              "Orange",
+              "Blue"
+            ]
+          }
+        }
+      }
+    },
+    "isSpecialAbility": {
+      "$id": "#root/isSpecialAbility",
+      "title": "Isspecialability",
+      "type": "boolean",
+      "default": true
+    },
+    "abilityBehaviour": {
+      "$id": "#root/abilityBehaviour",
+      "title": "Abilitybehaviour",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$id": "#root/abilityBehaviour/items",
+        "title": "Items",
+        "type": "object",
+        "properties": {
+          "trigger": {
+            "$id": "#root/abilityBehaviour/items/trigger",
+            "title": "Trigger",
+            "type": "object",
+            "properties": {
+              "triggerType": {
+                "$id": "#root/abilityBehaviour/items/trigger/triggerType",
+                "title": "Triggertype",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "activatesForCardsWithCondition": {
+                "$id": "#root/abilityBehaviour/items/trigger/activatesForCardsWithCondition",
+                "title": "Activatesforcardswithcondition",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          },
+          "placeCards": {
+            "$id": "#root/abilityBehaviour/items/placeCards",
+            "title": "Placecards",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/placeCards/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "runOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/placeCards/items/runOnCondition",
+                  "title": "Runoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "slot": {
+                  "$id": "#root/abilityBehaviour/items/placeCards/items/slot",
+                  "title": "Slot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/placeCards/items/slot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/placeCards/items/slot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/placeCards/items/slot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "card": {
+                  "$id": "#root/abilityBehaviour/items/placeCards/items/card",
+                  "title": "Card",
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "$id": "#root/abilityBehaviour/items/placeCards/items/card/name",
+                      "title": "Name",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "retainMods": {
+                      "$id": "#root/abilityBehaviour/items/placeCards/items/card/retainMods",
+                      "title": "Retainmods",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "randomCardOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/placeCards/items/card/randomCardOnCondition",
+                      "title": "Randomcardoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "replace": {
+                  "$id": "#root/abilityBehaviour/items/placeCards/items/replace",
+                  "title": "Replace",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          },
+          "buffCards": {
+            "$id": "#root/abilityBehaviour/items/buffCards",
+            "title": "Buffcards",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/buffCards/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "runOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/runOnCondition",
+                  "title": "Runoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "slot": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/slot",
+                  "title": "Slot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/buffCards/items/slot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/buffCards/items/slot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/buffCards/items/slot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "targetCard": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/targetCard",
+                  "title": "Targetcard",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "heal": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/heal",
+                  "title": "Heal",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "addStats": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/addStats",
+                  "title": "Addstats",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "setStats": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/setStats",
+                  "title": "Setstats",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "addAbilities": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/addAbilities",
+                  "title": "Addabilities",
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "$id": "#root/abilityBehaviour/items/buffCards/items/addAbilities/items",
+                    "title": "Items",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "$id": "#root/abilityBehaviour/items/buffCards/items/addAbilities/items/name",
+                        "title": "Name",
+                        "type": "string",
+                        "default": "",
+                        "pattern": "^.*$"
+                      },
+                      "infused": {
+                        "$id": "#root/abilityBehaviour/items/buffCards/items/addAbilities/items/infused",
+                        "title": "Infused",
+                        "type": "string",
+                        "default": "",
+                        "pattern": "^.*$"
+                      }
+                    }
+                  }
+                },
+                "removeAbilities": {
+                  "$id": "#root/abilityBehaviour/items/buffCards/items/removeAbilities",
+                  "title": "Removeabilities",
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "$id": "#root/abilityBehaviour/items/buffCards/items/removeAbilities/items",
+                    "title": "Items",
+                    "type": "string",
+                    "default": "",
+                    "pattern": "^.*$"
+                  }
+                }
+              }
+            }
+          },
+          "transformCards": {
+            "$id": "#root/abilityBehaviour/items/transformCards",
+            "title": "Transformcards",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/transformCards/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "runOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/transformCards/items/runOnCondition",
+                  "title": "Runoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "slot": {
+                  "$id": "#root/abilityBehaviour/items/transformCards/items/slot",
+                  "title": "Slot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/transformCards/items/slot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/transformCards/items/slot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/transformCards/items/slot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "targetCard": {
+                  "$id": "#root/abilityBehaviour/items/transformCards/items/targetCard",
+                  "title": "Targetcard",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "card": {
+                  "$id": "#root/abilityBehaviour/items/transformCards/items/card",
+                  "title": "Card",
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "$id": "#root/abilityBehaviour/items/transformCards/items/card/name",
+                      "title": "Name",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "retainMods": {
+                      "$id": "#root/abilityBehaviour/items/transformCards/items/card/retainMods",
+                      "title": "Retainmods",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "randomCardOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/transformCards/items/card/randomCardOnCondition",
+                      "title": "Randomcardoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "damageSlots": {
+            "$id": "#root/abilityBehaviour/items/damageSlots",
+            "title": "Damageslots",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/damageSlots/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "runOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/damageSlots/items/runOnCondition",
+                  "title": "Runoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "slot": {
+                  "$id": "#root/abilityBehaviour/items/damageSlots/items/slot",
+                  "title": "Slot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/damageSlots/items/slot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/damageSlots/items/slot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/damageSlots/items/slot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "damage": {
+                  "$id": "#root/abilityBehaviour/items/damageSlots/items/damage",
+                  "title": "Damage",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          },
+          "attackSlots": {
+            "$id": "#root/abilityBehaviour/items/attackSlots",
+            "title": "Attackslots",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/attackSlots/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "runOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/attackSlots/items/runOnCondition",
+                  "title": "Runoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "attackerSlot": {
+                  "$id": "#root/abilityBehaviour/items/attackSlots/items/attackerSlot",
+                  "title": "Attackerslot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/attackSlots/items/attackerSlot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/attackSlots/items/attackerSlot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/attackSlots/items/attackerSlot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "victimSlot": {
+                  "$id": "#root/abilityBehaviour/items/attackSlots/items/victimSlot",
+                  "title": "Victimslot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/attackSlots/items/victimSlot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/attackSlots/items/victimSlot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/attackSlots/items/victimSlot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "extraAttacks": {
+            "$id": "#root/abilityBehaviour/items/extraAttacks",
+            "title": "Extraattacks",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/extraAttacks/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "attackingSlot": {
+                  "$id": "#root/abilityBehaviour/items/extraAttacks/items/attackingSlot",
+                  "title": "Attackingslot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/extraAttacks/items/attackingSlot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/extraAttacks/items/attackingSlot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/extraAttacks/items/attackingSlot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "slotsToAttack": {
+                  "$id": "#root/abilityBehaviour/items/extraAttacks/items/slotsToAttack",
+                  "title": "Slotstoattack",
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "$id": "#root/abilityBehaviour/items/extraAttacks/items/slotsToAttack/items",
+                    "title": "Items",
+                    "type": "object",
+                    "properties": {
+                      "randomSlotOnCondition": {
+                        "$id": "#root/abilityBehaviour/items/extraAttacks/items/slotsToAttack/items/randomSlotOnCondition",
+                        "title": "Randomslotoncondition",
+                        "type": "string",
+                        "default": "",
+                        "pattern": "^.*$"
+                      },
+                      "index": {
+                        "$id": "#root/abilityBehaviour/items/extraAttacks/items/slotsToAttack/items/index",
+                        "title": "Index",
+                        "type": "string",
+                        "default": "",
+                        "pattern": "^.*$"
+                      },
+                      "isOpponentSlot": {
+                        "$id": "#root/abilityBehaviour/items/extraAttacks/items/slotsToAttack/items/isOpponentSlot",
+                        "title": "Isopponentslot",
+                        "type": "string",
+                        "default": "",
+                        "pattern": "^.*$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "gainCurrency": {
+            "$id": "#root/abilityBehaviour/items/gainCurrency",
+            "title": "Gaincurrency",
+            "type": "object",
+            "properties": {
+              "runOnCondition": {
+                "$id": "#root/abilityBehaviour/items/gainCurrency/runOnCondition",
+                "title": "Runoncondition",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "bones": {
+                "$id": "#root/abilityBehaviour/items/gainCurrency/bones",
+                "title": "Bones",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "energy": {
+                "$id": "#root/abilityBehaviour/items/gainCurrency/energy",
+                "title": "Energy",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "foils": {
+                "$id": "#root/abilityBehaviour/items/gainCurrency/foils",
+                "title": "Foils",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          },
+          "dealScaleDamage": {
+            "$id": "#root/abilityBehaviour/items/dealScaleDamage",
+            "title": "Dealscaledamage",
+            "type": "object",
+            "properties": {
+              "runOnCondition": {
+                "$id": "#root/abilityBehaviour/items/dealScaleDamage/runOnCondition",
+                "title": "Runoncondition",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "damage": {
+                "$id": "#root/abilityBehaviour/items/dealScaleDamage/damage",
+                "title": "Damage",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          },
+          "drawCards": {
+            "$id": "#root/abilityBehaviour/items/drawCards",
+            "title": "Drawcards",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/drawCards/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "runOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/drawCards/items/runOnCondition",
+                  "title": "Runoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "card": {
+                  "$id": "#root/abilityBehaviour/items/drawCards/items/card",
+                  "title": "Card",
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "$id": "#root/abilityBehaviour/items/drawCards/items/card/name",
+                      "title": "Name",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "retainMods": {
+                      "$id": "#root/abilityBehaviour/items/drawCards/items/card/retainMods",
+                      "title": "Retainmods",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "randomCardOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/drawCards/items/card/randomCardOnCondition",
+                      "title": "Randomcardoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "chooseSlots": {
+            "$id": "#root/abilityBehaviour/items/chooseSlots",
+            "title": "Chooseslots",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/chooseSlots/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "slotChooseableOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/chooseSlots/items/slotChooseableOnCondition",
+                  "title": "Slotchooseableoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          },
+          "moveCards": {
+            "$id": "#root/abilityBehaviour/items/moveCards",
+            "title": "Movecards",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/abilityBehaviour/items/moveCards/items",
+              "title": "Items",
+              "type": "object",
+              "properties": {
+                "runOnCondition": {
+                  "$id": "#root/abilityBehaviour/items/moveCards/items/runOnCondition",
+                  "title": "Runoncondition",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "moveFromSlot": {
+                  "$id": "#root/abilityBehaviour/items/moveCards/items/moveFromSlot",
+                  "title": "Movefromslot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/moveFromSlot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/moveFromSlot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/moveFromSlot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "moveToSlot": {
+                  "$id": "#root/abilityBehaviour/items/moveCards/items/moveToSlot",
+                  "title": "Movetoslot",
+                  "type": "object",
+                  "properties": {
+                    "randomSlotOnCondition": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/moveToSlot/randomSlotOnCondition",
+                      "title": "Randomslotoncondition",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "index": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/moveToSlot/index",
+                      "title": "Index",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "isOpponentSlot": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/moveToSlot/isOpponentSlot",
+                      "title": "Isopponentslot",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "strafe": {
+                  "$id": "#root/abilityBehaviour/items/moveCards/items/strafe",
+                  "title": "Strafe",
+                  "type": "object",
+                  "properties": {
+                    "direction": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/strafe/direction",
+                      "title": "Direction",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "flipSigil": {
+                      "$id": "#root/abilityBehaviour/items/moveCards/items/strafe/flipSigil",
+                      "title": "Flipsigil",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                },
+                "replace": {
+                  "$id": "#root/abilityBehaviour/items/moveCards/items/replace",
+                  "title": "Replace",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          },
+          "showMessage": {
+            "$id": "#root/abilityBehaviour/items/showMessage",
+            "title": "Showmessage",
+            "type": "object",
+            "properties": {
+              "message": {
+                "$id": "#root/abilityBehaviour/items/showMessage/message",
+                "title": "Message",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "length": {
+                "$id": "#root/abilityBehaviour/items/showMessage/length",
+                "title": "Length",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "emotion": {
+                "$id": "#root/abilityBehaviour/items/showMessage/emotion",
+                "title": "Emotion",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "letterAnimation": {
+                "$id": "#root/abilityBehaviour/items/showMessage/letterAnimation",
+                "title": "Letteranimation",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "speaker": {
+                "$id": "#root/abilityBehaviour/items/showMessage/speaker",
+                "title": "Speaker",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-jsoncardloader-resource": "https://tinyurl.com/IKnowWhatImDoingConfigils4",
+  "x-jsoncardloader-resolved-url": "https://json-editor.github.io/json-editor/?data=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"
+}

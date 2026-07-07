@@ -1,6 +1,6 @@
 # The Miki Komori Mod - Inscryption Card Generator
 
-This repository includes a Tkinter tool for creating `.jldr2` JSON files for Inscryption card mods. It can create standard card definitions and talking card definitions.
+This repository includes a Tkinter tool for creating JSONCardLoader `.jldr2` files for Inscryption card mods. It can create Cards, Sigils, Tribes, and Talking Cards, with local JSON Schema validation before save.
 
 ## Download The App
 
@@ -29,27 +29,24 @@ python "1 Card Generator/Card_Generator.py"
 
 On Windows, activate the virtual environment with `.venv\Scripts\activate` instead of `source .venv/bin/activate`.
 
-Pillow is used only for portrait previews. The app can still generate `.jldr2` files without it, but selected portraits will not preview.
+Pillow is used only for image previews where available. JSON generation and schema validation use `jsonschema`.
 
-## Create A Card File
+## Create JSONCardLoader Files
 
-1. Open the **Card Editor** tab.
-2. Enter a mod prefix and a unique card ID.
-3. Fill in the display name, description, stats, costs, categories, traits, sigils, and optional portrait path.
-4. Select **Generate .jldr2 File**.
-5. Save the file into the folder expected by your Inscryption mod setup.
+Open the tab for the output type you want:
 
-The generated file uses the card name format `Prefix_CardID` when a mod prefix is provided.
+- **Cards** saves card definitions as `.jldr2`.
+- **Sigils** saves sigil definitions as `_sigil.jldr2`.
+- **Tribes** saves tribe definitions as `_tribe.jldr2`.
+- **Talking Cards** saves talking card definitions as `_talk.jldr2`.
 
-## Create A Talking Card File
+Each tab includes a form, **Reset Form**, **Preview / Validate**, **Save**, and a read-only JSON preview. The app validates against checked-in JSONCardLoader schema fixtures before saving and shows any schema errors in the preview/status area.
 
-1. Open the **Talking Card Editor** tab.
-2. Enter the full target card ID.
-3. Choose the required face, eye, mouth, and emission sprites.
-4. Add at least one dialogue event with main dialogue lines.
-5. Select **Generate .jldr2 File**.
+For Cards, enter the unprefixed card ID and optional mod prefix. The generated JSON keeps `name` and `modPrefix` separate, matching JSONCardLoader's card schema.
 
-The tool saves talking card data as a `.jldr2` file using the JSON Card Loader 2 format.
+Enum-backed fields such as meta categories, abilities, special abilities, tribes, traits, appearance behaviours, gem costs, temples, emotions, and talking-card event names are selectable with checkboxes or dropdowns. The option lists are aligned with the SaxbyModEnums wiki where those enums apply.
+
+For Sigils and Talking Cards, nested schema-backed JSON editors are included for advanced structures such as `abilityBehaviour`, emotions, and dialogue events. Use the dropdown template controls to add common emotion and dialogue entries, and use **Validate Nested JSON** inside those editors when changing nested data directly.
 
 ## Build Locally
 
@@ -75,6 +72,13 @@ The helper uses:
 - `--strip` on Linux and macOS
 - UPX automatically on Windows and Linux when `upx` is available on `PATH`
 
+Run the local checks with:
+
+```bash
+python -m py_compile "1 Card Generator/Card_Generator.py"
+python -m unittest discover -s tests
+```
+
 ## Automated Builds
 
 GitHub Actions builds Windows, Linux, and macOS packages on every push to `main` and when the workflow is run manually. Successful builds are uploaded as workflow artifacts and attached to the rolling prerelease.
@@ -82,6 +86,7 @@ GitHub Actions builds Windows, Linux, and macOS packages on every push to `main`
 ## Repository Folders
 
 - `1 Card Generator/` - the Python card generator app.
+- `schemas/jsoncardloader/` - local JSONCardLoader schema fixtures used for validation.
 - `Artwork/` - exported artwork files.
 - `Artwork Projects/` - source artwork projects.
 - `Cards/` - generated or curated card files.

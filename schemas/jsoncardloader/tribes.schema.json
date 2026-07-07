@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://github.com/MADH95/JSONLoaderPlugin/blob/master/Tribe_Schema.json",
+  "title": "New Tribe",
+  "Description": "Schema to verify the input data for a new tribe",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tribes"
+  ],
+  "properties": {
+    "tribes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "guid",
+          "tribeIcon"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "The name of the tribe",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z\\d_]+$"
+          },
+          "guid": {
+            "description": "Your mod's GUID",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z\\d_]+$"
+          },
+          "tribeIcon": {
+            "description": "The image to use when displaying the tribe icon in the top-left corner of a card, as well as for auto-generated backs Size:109x149",
+            "type": "string",
+            "pattern": "^[a-zA-Z\\d_]+.png$"
+          },
+          "appearInTribeChoices": {
+            "description": "Whether the tribe should appear in tribe choice nodes",
+            "type": "boolean",
+            "default": true
+          },
+          "choiceCardBackTexture": {
+            "description": "The image to use for the card representing the tribe in a tribe choice Size:125x190 You can find some examples in this mod: https://inscryption.thunderstore.io/package/The_Unwanted_but_Useful_Libraries/Tribal_Libary/",
+            "type": "string",
+            "pattern": "^[a-zA-Z\\d_]+.png$"
+          }
+        }
+      }
+    }
+  },
+  "x-jsoncardloader-resource": "https://tinyurl.com/TribeSchema2",
+  "x-jsoncardloader-resolved-url": "https://json-editor.github.io/json-editor/?data=N4Ig9gDgLglmB2BnEAuUMDGCA2MBGqIiEAphlAE4kgA04eAVmVAPrYCGAnmAK5SHwwFALbtstIhgAWJUalAASRNNntCUqFAgoA9DoaIEAWmUzRAOiEBzHQBMK7AGZQjABgDsO06okKYt9U0IRF0dKxgoKR48cyxhHQBZAEEAEQAJAE4AVh0AKQBlAHkAOQAZMHZbEgoABWwecPgdPGwwPB1RRChqnQAVCnwSFnyVCwMECVgobGoUEGKSAHcAAn7BiRSSZQHoOHhCEbN2ZagwZYA3aphHThOZZZh4CD5l23YoY8chZeP4JZOBnhqHQoJxSIQ2kxyBJKrYInsxDUKJBqrAtqhHGJECQ6FQAI48GBUAIoADaIEog2QAF06BBkaQKGjkGgKYD0azQeC5uwKA5OBIIrIWaAubN6FD+LiSASiSQSeT4OxhMCQFZCQEQeyAJJYfa0kCw+EIREM1EwDmY7DYulmpkWkUgJUq+QgKrbGC7CZzXr3Z0kZZgRx3AOUoGTMHiroDeBWCTCR6lEixyKoACMdPe3Qo+zmAD1SewjAAvJJGABaAB1K7YWNSANQKEAAXzo6v8rvdGB2sG9IAAmrwKMthGBbAByRDLADiAFVtSkI9yiJTY/HE8mrKmUBmQBAs9VcyAC0XSxXq7WG03W2zBrrvaAuz29oRfQGYKIrKGzjxsctFjI8CvDAxAcJwjxWCGAKDA8eoPEBkTfhARgzM4yxYDm1SBsGxwYLytg0D8U6LCQ2DYERyxfMO7B8GARhfn8DjdLYyx4OwGAANZTvkMDFiQO6uBkAAeaYACwZEuUarnGmaaIehAniWZZVjWdb1uYECxtedDsBApC8tq8BrECADCUhgJgHKPls3aer2R4AOoyIhw6IdBQLLIg5k8NgLG6fpw6PO5AbSBZGABoI7qSYQeBgGAMzsPsdBVJiPn8CglA8CQN6hZZJn4QAQuxHG9CQQlQDwVCdjZz59m+Dyft+yy/gGVFQXhFAsVQ9JbMmsCxlBYbvkBxxDeh5mWcsPF8TuABMWQiRkrjLIOPDoYllGPCxhgqssZXKhAMxTkFkQgSOY4oMsGhaCEeiPNsYL2eYkQ8PAVQUF0QgkOYcA6PunHsF+fQyCws7wIsiXMSweB8KD2KOD5LClPgDgDFsfSAmISP4LynA6NFczRhBEj7nJOYKYWSnnqpDYaVpLbNozjN0F5YCLCw1TIh9hDSIlX6TGYUakOQVXSrKxLQ5wLApTR2DpVaNpuiBh1cCw+KEhLOACigCs4kQ5ns5ArCPKgmV64ILBGvZWP0ii9qWlievsAw7BCRijvJSB7AtEM8oRCw4y5rrnuIN7MwsFgZG6di7vWnrcKhz7LC24yzKx4rCdh0MvL8pbtgksHSuJ+HOeq1QQjven8de0npdS1UMzdFXdDJlnlt8qrWAQNrhd1xHCCUPFiAsKcEDN0Xbd9w3JDdJbZFq2zLKF5ntcd/XpEz0MHBdAvixVze2IzOQ8rI3gLLkuxvtwqcFAgAar2H8wJ/4OfIC5eFyAs+F19CBIiAfodWQVQ/4b3ILNEBR9YB8QkI4DgWhMAcVvizGAVglQVSoMnSo8Z3hSAMBIDACVLh4OpM2IAA=="
+}

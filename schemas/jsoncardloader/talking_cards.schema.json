@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JSONLoader Talking Card",
+  "description": "Make a talking card in Inscryption with the JSONCardLoader mod!",
+  "type": "object",
+  "properties": {
+    "cardName": {
+      "description": "The name of an existing card.",
+      "type": "string"
+    },
+    "faceSprite": {
+      "description": "The sprite image for your character's face.",
+      "$ref": "#/$defs/imagePath"
+    },
+    "eyeSprites": {
+      "description": "The sprite images for your character's eyes.",
+      "$ref": "#/$defs/faceAnim"
+    },
+    "mouthSprites": {
+      "description": "The sprite images for your character's mouth.",
+      "$ref": "#/$defs/faceAnim"
+    },
+    "emissionSprites": {
+      "description": "The sprite images for your animated portrait's emission.",
+      "$ref": "#/$defs/faceAnim"
+    },
+    "faceInfo": {
+      "description": "A bunch of settings for your character's animated portrait:",
+      "$ref": "#/$defs/faceInfo"
+    },
+    "emotions": {
+      "description": "Your character's emotions.",
+      "type": "array",
+      "items": {
+        "title": "emotion",
+        "$ref": "#/$defs/emotionData"
+      },
+      "uniqueItems": true
+    },
+    "dialogueEvents": {
+      "description": "Your character's dialogue events.",
+      "$ref": "#/$defs/dialogueEventsArray"
+    }
+  },
+  "required": [
+    "cardName",
+    "faceSprite",
+    "eyeSprites",
+    "mouthSprites",
+    "emissionSprites",
+    "faceInfo",
+    "dialogueEvents"
+  ],
+  "$defs": {
+    "faceAnim": {
+      "type": "object",
+      "properties": {
+        "open": {
+          "$ref": "#/$defs/imagePath"
+        },
+        "closed": {
+          "$ref": "#/$defs/imagePath"
+        }
+      },
+      "required": [
+        "open",
+        "closed"
+      ]
+    },
+    "imagePath": {
+      "type": "string",
+      "pattern": "(^_|.*\\.(png|jpg|jpeg|bmp))$"
+    },
+    "faceInfo": {
+      "type": "object",
+      "properties": {
+        "blinkRate": {
+          "description": "How often your character blinks. The higher the number, the more often they will blink. Default: 1.5",
+          "$ref": "#/$defs/clampNumber",
+          "default": 1.5
+        },
+        "voiceId": {
+          "description": "Your character's \"voice\". Most talking cards just use \"female1_voice\" and change the pitch!",
+          "$ref": "#/$defs/validVoiceIds"
+        },
+        "voiceSoundPitch": {
+          "description": "Your character's voice's pitch. The higher the number, the higher the pitch; the lower the number, the lower the pitch. Default: 1",
+          "$ref": "#/$defs/clampNumber",
+          "default": 1
+        },
+        "customVoice": {
+          "description": "The path to a custom audio file for your character's voice. It must be a very short sound; please be careful when adding your own! Supported formats are MP3, WAV and OGG.",
+          "$ref": "#/$defs/audioPath",
+          "default": null
+        }
+      },
+      "required": []
+    },
+    "clampNumber": {
+      "type": "number",
+      "maximum": 10,
+      "minimum": 0.1
+    },
+    "validVoiceIds": {
+      "type": "string",
+      "enum": [
+        "female1_voice",
+        "kobold_voice",
+        "cat_voice"
+      ]
+    },
+    "audioPath": {
+      "type": "string",
+      "pattern": ".*\\.(mp3|wav|ogg|aiff|aif)$"
+    },
+    "dialogueEventsArray": {
+      "type": "array",
+      "items": {
+        "title": "dialogue event",
+        "$ref": "#/$defs/dialogueEvent"
+      },
+      "uniqueItems": true
+    },
+    "dialogueEvent": {
+      "type": "object",
+      "properties": {
+        "eventName": {
+          "description": "The dialogue event trigger.",
+          "$ref": "#/$defs/eventNames"
+        },
+        "mainLines": {
+          "description": "What your character says when this event first plays for them.",
+          "$ref": "#/$defs/dialogueLines"
+        },
+        "repeatLines": {
+          "description": "The lines the character says after the first time the event has played.",
+          "type": "array",
+          "items": {
+            "title": "repeat lines",
+            "$ref": "#/$defs/dialogueLines"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "eventName",
+        "mainLines",
+        "repeatLines"
+      ]
+    },
+    "eventNames": {
+      "type": "string",
+      "enum": [
+        "OnDrawn",
+        "OnPlayFromHand",
+        "OnAttacked",
+        "OnBecomeSelectablePositive",
+        "OnBecomeSelectableNegative",
+        "OnSacrificed",
+        "OnSelectedForDeckTrial",
+        "OnSelectedForCardMerge",
+        "OnSelectedForCardRemove",
+        "OnDiscoveredInExploration",
+        "ProspectorBoss",
+        "AnglerBoss",
+        "TrapperTraderBoss",
+        "LeshyBoss",
+        "RoyalBoss",
+        "DefaultOpponent"
+      ]
+    },
+    "dialogueLines": {
+      "type": "array",
+      "items": {
+        "title": "line",
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "emotionData": {
+      "type": "object",
+      "properties": {
+        "emotion": {
+          "type": "string",
+          "enum": [
+            "Laughter",
+            "Anger",
+            "Quiet",
+            "Surprise",
+            "Curious"
+          ]
+        },
+        "faceSprite": {
+          "$ref": "#/$defs/imagePath"
+        },
+        "eyeSprites": {
+          "$ref": "#/$defs/faceAnim"
+        },
+        "mouthSprites": {
+          "$ref": "#/$defs/faceAnim"
+        },
+        "emissionSprites": {
+          "$ref": "#/$defs/faceAnim"
+        }
+      },
+      "required": [
+        "emotion"
+      ]
+    }
+  },
+  "x-jsoncardloader-resource": "https://tinyurl.com/TalkingCardJSON",
+  "x-jsoncardloader-resolved-url": "https://json-editor.github.io/json-editor/?data=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"
+}

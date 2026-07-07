@@ -1,0 +1,517 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "https://github.com/MADH95/JSONLoaderPlugin/blob/master/Schema.json",
+  "title": "New Card",
+  "Description": "Schema to verify the input data for a new card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "name": {
+      "description": "A name for the card",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z\\d_]+$"
+    },
+    "modPrefix": {
+      "description": "The common prefix for the cards that you are adding. It will be prefixed to the front of your card name if it is not already there.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z\\d]+$"
+    },
+    "displayedName": {
+      "description": "The name the card has in game",
+      "type": "string"
+    },
+    "description": {
+      "description": "The description Leshy will say when the card is found",
+      "type": "string"
+    },
+    "metaCategories": {
+      "description": "Used to categorize cards into groups, such as which cards can appear in card choice nodes on the map or be offered by the trader.",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "title": "Base Game Metacategory",
+            "description": "Base Game Metacategory",
+            "type": "string",
+            "enum": [
+              "ChoiceNode",
+              "TraderOffer",
+              "Part3Random",
+              "Rare",
+              "GBCPack",
+              "GBCPlayable"
+            ]
+          },
+          {
+            "title": "Mod-Added Metacategory",
+            "description": "Format: [Mod GUID].[Metacategory Name]",
+            "type": "string"
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "cardComplexity": {
+      "description": "How common the card is",
+      "default": "Vanilla",
+      "type": "string",
+      "enum": [
+        "Advanced",
+        "Intermediate",
+        "Simple",
+        "Vanilla"
+      ]
+    },
+    "temple": {
+      "description": "Which Scrybe the card belongs to",
+      "default": "Nature",
+      "type": "string",
+      "enum": [
+        "Nature",
+        "Tech",
+        "Undead",
+        "Wizard"
+      ]
+    },
+    "baseAttack": {
+      "description": "The base attack value of the card",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
+    "baseHealth": {
+      "description": "The base health value of the card",
+      "type": "integer",
+      "default": 1,
+      "minimum": 1
+    },
+    "hideAttackAndHealth": {
+      "description": "Hide the attack and health of the card",
+      "type": "boolean",
+      "default": "false"
+    },
+    "bloodCost": {
+      "description": "The sacrifice cost of the card",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
+    "bonesCost": {
+      "description": "The bones cost of the card",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
+    "energyCost": {
+      "description": "The energy cost of the card",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
+    "gemsCost": {
+      "description": "The gems cost of the card",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Blue",
+          "Green",
+          "Orange"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "specialStatIcon": {
+      "description": "Special stat icons replace health and/or attack values and change as the battle progresses",
+      "anyOf": [
+        {
+          "title": "Base Game Stat Icon",
+          "type": "string",
+          "enum": [
+            "Ants",
+            "Bell",
+            "Bones",
+            "CardsInHand",
+            "GreenGems",
+            "Mirror",
+            "SacrificesThisTurn"
+          ]
+        },
+        {
+          "title": "Mod-Added Stat Icon",
+          "description": "Format: [Mod GUID].[Stat Icon Name]",
+          "type": "string"
+        }
+      ]
+    },
+    "tribes": {
+      "description": "A list of tribes the card belongs to",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "title": "Base Game Tribe",
+            "description": "Base Game Tribe",
+            "type": "string",
+            "enum": [
+              "Bird",
+              "Canine",
+              "Hooved",
+              "Insect",
+              "Reptile",
+              "Squirrel"
+            ]
+          },
+          {
+            "title": "Mod-Added Tribe",
+            "description": "Format: [Mod GUID].[Tribe Name]",
+            "type": "string"
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "traits": {
+      "description": "A list of traits the card has",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "title": "Base Game Tribe",
+            "description": "Base Game Tribe",
+            "type": "string",
+            "enum": [
+              "Ant",
+              "Bear",
+              "Blind",
+              "DeathcardCreationNonOption",
+              "EatsWarrens",
+              "FeedsStoat",
+              "Fused",
+              "Gem",
+              "Giant",
+              "Goat",
+              "Juvenile",
+              "KillsSurvivors",
+              "LikesHoney",
+              "Pelt",
+              "ProtectsCub",
+              "SatisfiesRingTrial",
+              "Structure",
+              "Terrain",
+              "Uncuttable ",
+              "Undead",
+              "Wolf"
+            ]
+          },
+          {
+            "title": "Mod-Added Trait",
+            "description": "Format: [Mod GUID].[Trait Name]",
+            "type": "string"
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "specialAbilities": {
+      "description": "A list of special abilities the card has",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "title": "Base Game Special Abilities",
+            "description": "Base Game Special Abilities",
+            "type": "string",
+            "enum": [
+              "Ant",
+              "BellProximity",
+              "BountyHunter",
+              "BrokenCoinLeft",
+              "BrokenCoinRight",
+              "CagedWolf",
+              "CardsInHand",
+              "Cat",
+              "Daus",
+              "EMPTY3",
+              "EMPTY4",
+              "EMPTY5",
+              "EMPTY6",
+              "GiantCard",
+              "GiantMoon",
+              "GreenMage",
+              "JerseyDevil",
+              "Lammergeier",
+              "Mirror",
+              "Ouroboros",
+              "PackMule",
+              "RandomCard",
+              "SacrificesThisTurn",
+              "Shapeshifter",
+              "SpawnLice",
+              "TalkingCardChooser",
+              "TrapSpawner"
+            ]
+          },
+          {
+            "title": "Mod-Added Special Abilities",
+            "description": "Format: [Mod GUID].[Special Ability Name]",
+            "type": "string"
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "abilities": {
+      "description": "A list of abilities the card has",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "title": "Base Game Abilities",
+            "description": "Base Game Abilities",
+            "type": "string",
+            "enum": [
+              "None",
+              "ActivatedDealDamage",
+              "ActivatedDrawSkeleton",
+              "ActivatedEnergyToBones",
+              "ActivatedHeal",
+              "ActivatedRandomPowerBone  ",
+              "ActivatedRandomPowerEnergy",
+              "ActivatedSacrificeDrawCards",
+              "ActivatedStatsUp",
+              "ActivatedStatsUpEnergy",
+              "AllStrike",
+              "Apparition",
+              "BeesOnHit",
+              "BloodGuzzler",
+              "BombSpawner",
+              "BoneDigger",
+              "Brittle",
+              "BuffEnemy",
+              "BuffGems",
+              "BuffNeighbours",
+              "CellBuffSelf",
+              "CellDrawRandomCardOnDeath",
+              "CellTriStrike",
+              "ConduitBuffAttack",
+              "ConduitEnergy",
+              "ConduitFactory",
+              "ConduitHeal",
+              "ConduitNull",
+              "ConduitSpawnGems",
+              "CorpseEater",
+              "CreateBells",
+              "CreateDams",
+              "CreateEgg",
+              "DeathShield",
+              "Deathtouch",
+              "DebuffEnemy",
+              "DeleteFile",
+              "DoubleDeath",
+              "DoubleStrike",
+              "DrawAnt",
+              "DrawCopy",
+              "DrawCopyOnDeath",
+              "DrawNewHand",
+              "DrawRabbits",
+              "DrawRandomCardOnDeath",
+              "DrawVesselOnHit",
+              "DropRubyOnDeath",
+              "EdaxioArms",
+              "EdaxioHead",
+              "EdaxioLegs",
+              "EdaxioTorso",
+              "Evolve",
+              "ExplodeGems",
+              "ExplodeOnDeath",
+              "ExplodingCorpse",
+              "FileSizeDamage",
+              "Flying",
+              "GainAttackOnKill",
+              "GainBattery",
+              "GainGemBlue",
+              "GainGemGreen",
+              "GainGemOrange",
+              "GainGemTriple",
+              "GemDependant",
+              "GemsDraw",
+              "GuardDog",
+              "Haunter",
+              "HydraEgg",
+              "IceCube",
+              "LatchBrittle",
+              "LatchDeathShield",
+              "LatchExplodeOnDeath",
+              "Loot",
+              "MadeOfStone",
+              "Morsel",
+              "MoveBeside",
+              "OpponentBones",
+              "PermaDeath",
+              "PreventAttack",
+              "QuadrupleBones",
+              "RandomAbility",
+              "RandomConsumable",
+              "Reach",
+              "Sacrificial",
+              "Sentry",
+              "Sharp",
+              "ShieldGems",
+              "Sinkhole",
+              "SkeletonStrafe",
+              "Sniper",
+              "SplitStrike",
+              "SquirrelOrbit",
+              "SquirrelStrafe",
+              "SteelTrap",
+              "Strafe",
+              "StrafePush",
+              "StrafeSwap",
+              "Submerge",
+              "SubmergeSquid",
+              "SwapStats",
+              "TailOnHit",
+              "Transformer",
+              "TriStrike",
+              "TripleBlood",
+              "Tutor",
+              "VirtualReality",
+              "WhackAMole"
+            ]
+          },
+          {
+            "title": "Mod-Added Abilities",
+            "description": "Format: [Mod GUID].[Ability Name]",
+            "type": "string"
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "evolveIntoName": {
+      "description": "The name of the card that this card should evolve into if it has or gains the Evolve ability",
+      "type": "string"
+    },
+    "evolveTurns": {
+      "description": "The number of turns this card should take to evolve if it has or gains the Evolve ability",
+      "type": "integer",
+      "minimum": 1
+    },
+    "defaultEvolutionName": {
+      "description": "The card's name after evolving (if it doesn't have a defined evolution), in place of Elder [cardname]",
+      "type": "string"
+    },
+    "tailName": {
+      "description": "The name of the card that this card should leave behind as a tail if it has or gains the TailOnHit ability",
+      "type": "string"
+    },
+    "tailLostPortrait": {
+      "description": "The .png file that contains the portrait that will replace this card's portrait if it loses its tail",
+      "type": "string"
+    },
+    "iceCubeName": {
+      "description": "The name of the card that will be generated if this card has or gains the IceCube ability",
+      "type": "string"
+    },
+    "flipPortraitForStrafe": {
+      "description": "determines if the card art is flipped when the card changes it's strafe direction",
+      "type": "boolean",
+      "default": "false"
+    },
+    "onePerDeck": {
+      "description": "determines if the card should be limited to 1 per deck",
+      "type": "boolean",
+      "default": false
+    },
+    "appearanceBehaviour": {
+      "description": "A list of appearance behaviours the cards have",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "title": "Base Game Appearances",
+            "description": "Base Game Appearances",
+            "type": "string",
+            "enum": [
+              "AddSnelkDecals",
+              "AlternatingBloodDecal",
+              "AnimatedPortrait",
+              "DynamicPortrait",
+              "FullCardPortrait",
+              "GiantAnimatedPortrait",
+              "GoldEmission",
+              "HologramPortrait",
+              "RareCardBackground",
+              "RareCardColors",
+              "SexyGoat",
+              "StaticGlitch",
+              "TerrainBackground",
+              "TerrainLayout"
+            ]
+          },
+          {
+            "title": "Mod-Added Appearances",
+            "description": "Format: [Mod GUID].[Appearance Name]",
+            "type": "string"
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "texture": {
+      "description": "The image to use for the card art   Size:114x94",
+      "type": "string",
+      "pattern": "^[a-zA-Z\\d_]+.png$"
+    },
+    "emissionTexture": {
+      "description": "The emission texture the card uses when a sigil is sacrificed on it   Size:114x94",
+      "type": "string",
+      "pattern": "^[a-zA-Z\\d_]+.png$"
+    },
+    "altTexture": {
+      "description": "The alternate image to use for the card art (used by specific abilities only)   Size:114x94",
+      "type": "string",
+      "pattern": "^[a-zA-Z\\d_]+.png$"
+    },
+    "altEmissionTexture": {
+      "description": "The emission texture the card uses when a sigil is sacrificed on it and the card is displaying the alternate art   Size:114x94",
+      "type": "string",
+      "pattern": "^[a-zA-Z\\d_]+.png$"
+    },
+    "pixelTexture": {
+      "description": "The image to use for the card art   Size:41x28",
+      "type": "string",
+      "pattern": "^[a-zA-Z\\d_]+.png$"
+    },
+    "titleGraphic": {
+      "description": "The image to use for the card title (e.g., tentacle card titles)   Size:123x28",
+      "type": "string",
+      "pattern": "^[a-zA-Z\\d_]+.png$"
+    },
+    "decals": {
+      "description": "An array of decals to add to the card   Size: 125x190",
+      "type": "array",
+      "items": {
+        "description": "The path for the decal",
+        "type": "string",
+        "pattern": "^[a-zA-Z\\d_]+.png$"
+      },
+      "uniqueItems": true
+    },
+    "extensionProperties": {
+      "description": "Additional custom properties that can be read by other mods, abilities, etc.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "x-jsoncardloader-resource": "https://tinyurl.com/JsonCardMaker5",
+  "x-jsoncardloader-resolved-url": "https://json-editor.github.io/json-editor/?data=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="
+}
