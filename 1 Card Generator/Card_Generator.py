@@ -14,7 +14,6 @@ from generator_core.builders import (
     build_tribe_filename,
     build_tribes_data,
     parse_csv,
-    parse_lines,
 )
 from generator_core.constants import (
     ABILITIES,
@@ -23,6 +22,16 @@ from generator_core.constants import (
     APPEARANCE_BEHAVIOUR_TOOLTIPS,
     CARD_COMPLEXITIES,
     CARD_COMPLEXITY_TOOLTIPS,
+    CONFIGIL_ACTION_ORDER,
+    CONFIGIL_ACTION_TOOLTIPS,
+    CONFIGIL_ACTION_TYPES,
+    CONFIGIL_FIELD_TOOLTIPS,
+    CONFIGIL_LETTER_ANIMATIONS,
+    CONFIGIL_MESSAGE_EMOTIONS,
+    CONFIGIL_SPEAKERS,
+    CONFIGIL_STRAFE_DIRECTIONS,
+    CONFIGIL_TRIGGER_TOOLTIPS,
+    CONFIGIL_TRIGGER_TYPES,
     EMOTION_TYPES,
     EVENT_NAMES,
     GEM_TYPES,
@@ -43,6 +52,7 @@ from generator_core.constants import (
 from generator_core.schema_editor import JSONSchemaTextEditor
 from generator_core.schemas import load_schema
 from generator_core.scroll import ScrollableFrame
+from generator_core.sigil_behavior import build_action, build_behavior_entry, merge_action
 from generator_core.ui_helpers import (
     ToolTip,
     choose_audio,
@@ -75,20 +85,29 @@ class GeneratorTab(ttk.Frame):
         self.preview.grid(row=1, column=0, sticky="nsew", pady=(5, 5))
         ttk.Label(right, textvariable=self.status, foreground="#6a3b00", wraplength=520).grid(row=2, column=0, sticky=tk.W)
 
-    def labeled_entry(self, parent, row, label, var, width=36):
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky=tk.W, pady=2)
+    def labeled_entry(self, parent, row, label, var, width=36, tooltip=None):
+        label_widget = ttk.Label(parent, text=label)
+        label_widget.grid(row=row, column=0, sticky=tk.W, pady=2)
+        if tooltip:
+            ToolTip(label_widget, tooltip)
         ttk.Entry(parent, textvariable=var, width=width).grid(row=row, column=1, sticky=tk.W, pady=2)
         return row + 1
 
-    def labeled_spin(self, parent, row, label, var, from_=0, to=99, increment=1, width=7):
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky=tk.W, pady=2)
+    def labeled_spin(self, parent, row, label, var, from_=0, to=99, increment=1, width=7, tooltip=None):
+        label_widget = ttk.Label(parent, text=label)
+        label_widget.grid(row=row, column=0, sticky=tk.W, pady=2)
+        if tooltip:
+            ToolTip(label_widget, tooltip)
         ttk.Spinbox(parent, from_=from_, to=to, increment=increment, textvariable=var, width=width).grid(
             row=row, column=1, sticky=tk.W, pady=2
         )
         return row + 1
 
-    def labeled_combo(self, parent, row, label, var, values, width=24, tooltips=None):
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky=tk.W, pady=2)
+    def labeled_combo(self, parent, row, label, var, values, width=24, tooltips=None, tooltip=None):
+        label_widget = ttk.Label(parent, text=label)
+        label_widget.grid(row=row, column=0, sticky=tk.W, pady=2)
+        if tooltip:
+            ToolTip(label_widget, tooltip)
         combo = ttk.Combobox(parent, textvariable=var, values=values, state="readonly", width=width)
         combo.grid(row=row, column=1, sticky=tk.W, pady=2)
         if tooltips:
@@ -96,8 +115,11 @@ class GeneratorTab(ttk.Frame):
             var.trace_add("write", lambda *_args: setattr(tooltip, "text", tooltips.get(var.get(), "")))
         return row + 1
 
-    def image_entry(self, parent, row, label, var):
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky=tk.W, pady=2)
+    def image_entry(self, parent, row, label, var, tooltip=None):
+        label_widget = ttk.Label(parent, text=label)
+        label_widget.grid(row=row, column=0, sticky=tk.W, pady=2)
+        if tooltip:
+            ToolTip(label_widget, tooltip)
         ttk.Entry(parent, textvariable=var, width=34).grid(row=row, column=1, sticky=tk.W, pady=2)
         ttk.Button(parent, text="Browse...", command=lambda: choose_image(var)).grid(row=row, column=2, sticky=tk.W, padx=5)
         return row + 1
@@ -363,29 +385,66 @@ class SigilsTab(GeneratorTab):
         self.energy_cost = tk.IntVar()
         self.blood_cost = tk.IntVar()
         self.gems_cost = {gem: tk.BooleanVar(value=False) for gem in GEM_TYPES}
+        self.trigger_type = tk.StringVar()
+        self.trigger_condition = tk.StringVar()
+        self.trigger_health_level = tk.StringVar()
+        self.action_order_vars = {name: tk.BooleanVar(value=False) for name in CONFIGIL_ACTION_ORDER}
+        self.action_type = tk.StringVar()
+        self.action_condition = tk.StringVar()
+        self.slot_index = tk.StringVar()
+        self.slot_opponent = tk.BooleanVar()
+        self.secondary_slot_index = tk.StringVar()
+        self.secondary_slot_opponent = tk.BooleanVar()
+        self.action_card_name = tk.StringVar()
+        self.action_target_card = tk.StringVar()
+        self.retain_mods = tk.BooleanVar()
+        self.replace_action = tk.BooleanVar()
+        self.heal_amount = tk.StringVar()
+        self.add_stats = tk.StringVar()
+        self.set_stats = tk.StringVar()
+        self.add_ability = tk.StringVar()
+        self.remove_ability = tk.StringVar()
+        self.infused_ability = tk.BooleanVar()
+        self.damage_amount = tk.StringVar()
+        self.gain_bones = tk.StringVar()
+        self.gain_energy = tk.StringVar()
+        self.gain_foils = tk.StringVar()
+        self.strafe_direction = tk.StringVar()
+        self.flip_sigil = tk.BooleanVar()
+        self.message_text = tk.StringVar()
+        self.message_length = tk.StringVar()
+        self.message_emotion = tk.StringVar()
+        self.letter_animation = tk.StringVar()
+        self.speaker = tk.StringVar()
         row = 0
         ttk.Label(parent, text="Sigil Identity", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W)
         row += 1
-        row = self.labeled_entry(parent, row, "Name", self.name)
-        row = self.labeled_entry(parent, row, "GUID", self.guid)
-        row = self.labeled_entry(parent, row, "Description", self.description, width=50)
+        row = self.labeled_entry(parent, row, "Name", self.name, tooltip="Required string for the name of your sigil.")
+        row = self.labeled_entry(parent, row, "GUID", self.guid, tooltip="Required string that identifies the sigil.")
+        row = self.labeled_entry(parent, row, "Description", self.description, width=50, tooltip="Optional rulebook description for the sigil.")
         row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4, tooltips=META_CATEGORY_TOOLTIPS)
-        row = self.image_entry(parent, row, "Texture", self.texture)
-        row = self.image_entry(parent, row, "Pixel Texture", self.pixel_texture)
-        row = self.labeled_spin(parent, row, "Power Level", self.power_level, to=99)
-        row = self.labeled_spin(parent, row, "Priority", self.priority, to=99)
-        ttk.Checkbutton(parent, text="Opponent Usable", variable=self.opponent_usable).grid(row=row, column=1, sticky=tk.W)
+        row = self.image_entry(parent, row, "Texture", self.texture, tooltip="Optional sigil artwork. Configils expects a 49x49 .png.")
+        row = self.image_entry(parent, row, "Pixel Texture", self.pixel_texture, tooltip="Optional pixel sigil artwork. Configils expects a 17x17 .png.")
+        row = self.labeled_spin(parent, row, "Power Level", self.power_level, to=99, tooltip="Affects rarity in cave trials, sigil nodes, and Leshy's totem battles.")
+        row = self.labeled_spin(parent, row, "Priority", self.priority, to=99, tooltip="Controls activation order. Lower priority sigils activate before higher priority sigils.")
+        opponent_usable = ttk.Checkbutton(parent, text="Opponent Usable", variable=self.opponent_usable)
+        opponent_usable.grid(row=row, column=1, sticky=tk.W)
+        ToolTip(opponent_usable, "Determines whether the sigil can appear on Leshy's totems.")
         row += 1
-        ttk.Checkbutton(parent, text="Can Stack", variable=self.can_stack).grid(row=row, column=1, sticky=tk.W)
+        can_stack = ttk.Checkbutton(parent, text="Can Stack", variable=self.can_stack)
+        can_stack.grid(row=row, column=1, sticky=tk.W)
+        ToolTip(can_stack, "Determines whether multiple copies of this sigil can stack on one card.")
         row += 1
-        ttk.Checkbutton(parent, text="Is Special Ability", variable=self.is_special_ability).grid(row=row, column=1, sticky=tk.W)
+        is_special = ttk.Checkbutton(parent, text="Is Special Ability", variable=self.is_special_ability)
+        is_special.grid(row=row, column=1, sticky=tk.W)
+        ToolTip(is_special, "If true, Configils treats this as a special ability and several rulebook fields are no longer required.")
         row += 1
 
         ttk.Label(parent, text="Activation Cost", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
         row += 1
-        row = self.labeled_spin(parent, row, "Bones", self.bones_cost, to=30)
-        row = self.labeled_spin(parent, row, "Energy", self.energy_cost, to=10)
-        row = self.labeled_spin(parent, row, "Blood", self.blood_cost, to=10)
+        row = self.labeled_spin(parent, row, "Bones", self.bones_cost, to=30, tooltip="Bone token cost to activate the sigil.")
+        row = self.labeled_spin(parent, row, "Energy", self.energy_cost, to=10, tooltip="Energy cost to activate the sigil.")
+        row = self.labeled_spin(parent, row, "Blood", self.blood_cost, to=10, tooltip="Number of creatures that must be sacrificed to activate the sigil.")
         ttk.Label(parent, text="Gems").grid(row=row, column=0, sticky=tk.NW)
         gems = ttk.Frame(parent)
         gems.grid(row=row, column=1, sticky=tk.W)
@@ -393,7 +452,68 @@ class SigilsTab(GeneratorTab):
             ttk.Checkbutton(gems, text=gem, variable=var).pack(side=tk.LEFT)
         row += 1
 
-        ttk.Label(parent, text="Ability Behaviour Tree JSON", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
+        ttk.Label(parent, text="Ability Behaviour Builder", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
+        row += 1
+        row = self.labeled_combo(
+            parent, row, "Trigger", self.trigger_type, CONFIGIL_TRIGGER_TYPES, width=28,
+            tooltips=CONFIGIL_TRIGGER_TOOLTIPS,
+        )
+        row = self.labeled_entry(
+            parent, row, "Trigger Condition", self.trigger_condition, width=52,
+            tooltip="Optional condition that must evaluate to true for the sigil to activate.",
+        )
+        row = self.labeled_entry(
+            parent, row, "Health Level", self.trigger_health_level, width=12,
+            tooltip="Used by OnHealthLevel. The trigger fires when health is reduced to this value or lower.",
+        )
+        row = self.checkbox_group(parent, row, "Action Order", self.action_order_vars, columns=4, tooltips=CONFIGIL_ACTION_TOOLTIPS)
+
+        row = self.labeled_combo(
+            parent, row, "Action Template", self.action_type, CONFIGIL_ACTION_TYPES, width=28,
+            tooltips=CONFIGIL_ACTION_TOOLTIPS,
+        )
+        row = self.labeled_entry(parent, row, "Action Condition", self.action_condition, width=52, tooltip=CONFIGIL_FIELD_TOOLTIPS["condition"])
+        row = self.labeled_entry(parent, row, "Primary Slot Index", self.slot_index, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["slot"])
+        ttk.Checkbutton(parent, text="Primary Slot Is Opponent Slot", variable=self.slot_opponent).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+        row = self.labeled_entry(parent, row, "Secondary Slot Index", self.secondary_slot_index, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["slot"])
+        ttk.Checkbutton(parent, text="Secondary Slot Is Opponent Slot", variable=self.secondary_slot_opponent).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+        row = self.labeled_entry(parent, row, "Card Name", self.action_card_name, width=36, tooltip=CONFIGIL_FIELD_TOOLTIPS["card"])
+        row = self.labeled_entry(parent, row, "Target Card", self.action_target_card, width=36, tooltip=CONFIGIL_FIELD_TOOLTIPS["targetCard"])
+        ttk.Checkbutton(parent, text="Retain Mods", variable=self.retain_mods).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+        ttk.Checkbutton(parent, text="Replace Existing Card", variable=self.replace_action).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+
+        row = self.labeled_entry(parent, row, "Heal Amount", self.heal_amount, width=20)
+        row = self.labeled_entry(parent, row, "Add Stats", self.add_stats, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["stats"])
+        row = self.labeled_entry(parent, row, "Set Stats", self.set_stats, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["stats"])
+        row = self.labeled_entry(parent, row, "Add Ability", self.add_ability, width=36)
+        row = self.labeled_entry(parent, row, "Remove Ability", self.remove_ability, width=36)
+        ttk.Checkbutton(parent, text="Added Ability Is Infused", variable=self.infused_ability).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+        row = self.labeled_entry(parent, row, "Damage", self.damage_amount, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["damage"])
+        row = self.labeled_entry(parent, row, "Gain Bones", self.gain_bones, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
+        row = self.labeled_entry(parent, row, "Gain Energy", self.gain_energy, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
+        row = self.labeled_entry(parent, row, "Gain Foils", self.gain_foils, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
+        row = self.labeled_combo(parent, row, "Strafe Direction", self.strafe_direction, ["None"] + CONFIGIL_STRAFE_DIRECTIONS, width=16)
+        ttk.Checkbutton(parent, text="Flip Sigil On Bounce", variable=self.flip_sigil).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+        row = self.labeled_entry(parent, row, "Message", self.message_text, width=52)
+        row = self.labeled_entry(parent, row, "Message Length", self.message_length, width=12, tooltip=CONFIGIL_FIELD_TOOLTIPS["messageLength"])
+        row = self.labeled_combo(parent, row, "Message Emotion", self.message_emotion, CONFIGIL_MESSAGE_EMOTIONS, width=18)
+        row = self.labeled_combo(parent, row, "Letter Animation", self.letter_animation, CONFIGIL_LETTER_ANIMATIONS, width=18)
+        row = self.labeled_combo(parent, row, "Speaker", self.speaker, CONFIGIL_SPEAKERS, width=28)
+
+        builder_buttons = ttk.Frame(parent)
+        builder_buttons.grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(8, 4))
+        ttk.Button(builder_buttons, text="Replace Behavior With Template", command=self.replace_behavior_from_builder).pack(side=tk.LEFT)
+        ttk.Button(builder_buttons, text="Append New Triggered Behavior", command=self.append_behavior_from_builder).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(builder_buttons, text="Add Action To First Behavior", command=self.add_action_to_first_behavior).pack(side=tk.LEFT, padx=(8, 0))
+        row += 1
+
+        ttk.Label(parent, text="Advanced Ability Behaviour JSON", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
         row += 1
         self.behavior_editor = JSONSchemaTextEditor(parent, self.behavior_schema, [], height=18)
         self.behavior_editor.grid(row=row, column=0, columnspan=3, sticky="nsew")
@@ -402,6 +522,87 @@ class SigilsTab(GeneratorTab):
 
     def selected_gems(self):
         return [gem for gem, var in self.gems_cost.items() if var.get()]
+
+    def selected_action_order(self):
+        return self.selected(self.action_order_vars)
+
+    def action_fields(self):
+        strafe_direction = "" if self.strafe_direction.get() == "None" else self.strafe_direction.get()
+        return {
+            "condition": self.action_condition.get().strip(),
+            "slot_index": self.slot_index.get().strip(),
+            "slot_opponent": self.slot_opponent.get(),
+            "secondary_slot_index": self.secondary_slot_index.get().strip(),
+            "secondary_slot_opponent": self.secondary_slot_opponent.get(),
+            "card_name": self.action_card_name.get().strip(),
+            "target_card": self.action_target_card.get().strip(),
+            "retain_mods": self.retain_mods.get(),
+            "replace": self.replace_action.get(),
+            "heal": self.heal_amount.get().strip(),
+            "add_stats": self.add_stats.get().strip(),
+            "set_stats": self.set_stats.get().strip(),
+            "add_ability": self.add_ability.get().strip(),
+            "remove_ability": self.remove_ability.get().strip(),
+            "infused": self.infused_ability.get(),
+            "damage": self.damage_amount.get().strip(),
+            "bones": self.gain_bones.get().strip(),
+            "energy": self.gain_energy.get().strip(),
+            "foils": self.gain_foils.get().strip(),
+            "strafe_direction": strafe_direction,
+            "flip_sigil": self.flip_sigil.get(),
+            "message": self.message_text.get().strip(),
+            "message_length": self.message_length.get().strip(),
+            "message_emotion": self.message_emotion.get(),
+            "letter_animation": self.letter_animation.get(),
+            "speaker": self.speaker.get(),
+        }
+
+    def behavior_from_builder(self):
+        return build_behavior_entry(
+            trigger_type=self.trigger_type.get(),
+            trigger_condition=self.trigger_condition.get().strip(),
+            health_level=self.trigger_health_level.get().strip(),
+            action_order=self.selected_action_order(),
+            action_type=self.action_type.get(),
+            fields=self.action_fields(),
+        )
+
+    def current_behavior(self):
+        value = self.behavior_editor.get_value()
+        if not isinstance(value, list):
+            raise ValueError("Ability Behaviour JSON must be an array.")
+        return value
+
+    def set_behavior(self, value):
+        self.behavior_editor.set_value(value)
+        self.refresh_preview()
+
+    def replace_behavior_from_builder(self):
+        try:
+            self.set_behavior([self.behavior_from_builder()])
+        except (json.JSONDecodeError, ValueError) as exc:
+            self.status.set(f"Behavior builder error: {exc}")
+
+    def append_behavior_from_builder(self):
+        try:
+            behavior = self.current_behavior()
+            behavior.append(self.behavior_from_builder())
+            self.set_behavior(behavior)
+        except (json.JSONDecodeError, ValueError) as exc:
+            self.status.set(f"Behavior builder error: {exc}")
+
+    def add_action_to_first_behavior(self):
+        try:
+            behavior = self.current_behavior()
+            if not behavior:
+                behavior.append({"trigger": {"triggerType": self.trigger_type.get()}})
+            merge_action(behavior[0], build_action(self.action_type.get(), self.action_fields()))
+            order = self.selected_action_order()
+            if order:
+                behavior[0]["actionOrder"] = order
+            self.set_behavior(behavior)
+        except (json.JSONDecodeError, ValueError) as exc:
+            self.status.set(f"Behavior builder error: {exc}")
 
     def data(self):
         return build_sigil_data(
@@ -454,6 +655,38 @@ class SigilsTab(GeneratorTab):
         for var in self.meta_categories.values():
             var.set(False)
         for var in self.gems_cost.values():
+            var.set(False)
+        self.trigger_type.set("OnResolveOnBoard")
+        self.trigger_condition.set("")
+        self.trigger_health_level.set("")
+        self.action_type.set("placeCards")
+        self.action_condition.set("")
+        self.slot_index.set("[BaseCard.Slot.Index]")
+        self.slot_opponent.set(False)
+        self.secondary_slot_index.set("")
+        self.secondary_slot_opponent.set(False)
+        self.action_card_name.set("Rabbit")
+        self.action_target_card.set("")
+        self.retain_mods.set(False)
+        self.replace_action.set(False)
+        self.heal_amount.set("")
+        self.add_stats.set("")
+        self.set_stats.set("")
+        self.add_ability.set("")
+        self.remove_ability.set("")
+        self.infused_ability.set(False)
+        self.damage_amount.set("1")
+        self.gain_bones.set("")
+        self.gain_energy.set("")
+        self.gain_foils.set("")
+        self.strafe_direction.set("None")
+        self.flip_sigil.set(False)
+        self.message_text.set("A sigil effect activates.")
+        self.message_length.set("2")
+        self.message_emotion.set("Neutral")
+        self.letter_animation.set("None")
+        self.speaker.set("Leshy")
+        for var in self.action_order_vars.values():
             var.set(False)
         self.behavior_editor.set_value(SIGIL_BEHAVIOR_TEMPLATE)
         self.form.scroll_to_top()
