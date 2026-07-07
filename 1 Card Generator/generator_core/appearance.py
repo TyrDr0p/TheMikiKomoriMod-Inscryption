@@ -14,6 +14,7 @@ from .schemas import project_root
 BASE_FONT_FAMILY = "DejaVu Sans"
 MONO_FONT_FAMILY = "DejaVu Sans Mono"
 BUNDLED_FONT_FILES = ("DejaVuSans.ttf", "DejaVuSans-Bold.ttf", "DejaVuSansMono.ttf")
+_LINUX_FONTCONFIG_REF = None
 
 PALETTES = {
     "light": {
@@ -112,6 +113,8 @@ def _register_macos_fonts(paths: list[Path]) -> bool:
 
 
 def _register_linux_fonts(paths: list[Path]) -> bool:
+    global _LINUX_FONTCONFIG_REF
+
     library = ctypes.util.find_library("fontconfig")
     if not library:
         return False
@@ -120,17 +123,32 @@ def _register_linux_fonts(paths: list[Path]) -> bool:
     except OSError:
         return False
 
+    fontconfig.FcConfigCreate.argtypes = []
+    fontconfig.FcConfigCreate.restype = ctypes.c_void_p
     fontconfig.FcConfigAppFontAddFile.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
     fontconfig.FcConfigAppFontAddFile.restype = ctypes.c_bool
     fontconfig.FcConfigBuildFonts.argtypes = [ctypes.c_void_p]
     fontconfig.FcConfigBuildFonts.restype = ctypes.c_bool
+    fontconfig.FcConfigSetCurrent.argtypes = [ctypes.c_void_p]
+    fontconfig.FcConfigSetCurrent.restype = ctypes.c_bool
+
+    config = fontconfig.FcConfigCreate()
+    if not config:
+        return False
 
     added = False
     for path in paths:
-        added = bool(fontconfig.FcConfigAppFontAddFile(None, str(path).encode("utf-8"))) or added
-    if added:
-        fontconfig.FcConfigBuildFonts(None)
-    return added
+        added = bool(fontconfig.FcConfigAppFontAddFile(config, str(path).encode("utf-8"))) or added
+    if not added:
+        return False
+
+    if not fontconfig.FcConfigBuildFonts(config):
+        return False
+    if not fontconfig.FcConfigSetCurrent(config):
+        return False
+
+    _LINUX_FONTCONFIG_REF = (fontconfig, config)
+    return True
 
 
 def configure_named_fonts(root: tk.Tk) -> tuple[str, str]:
