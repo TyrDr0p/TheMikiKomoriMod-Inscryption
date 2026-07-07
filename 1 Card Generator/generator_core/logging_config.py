@@ -57,16 +57,14 @@ def writable_debug_log_path(log_dir: Path | None = None) -> Path:
 
 
 def configure_debug_logging(enabled: bool, log_dir: Path | None = None, console: bool = True) -> Path | None:
-    root_logger = logging.getLogger()
-    for handler in list(root_logger.handlers):
-        root_logger.removeHandler(handler)
-        handler.close()
+    close_logging_handlers()
 
     if not enabled:
-        root_logger.addHandler(logging.NullHandler())
+        logging.getLogger().addHandler(logging.NullHandler())
         return None
 
     log_path = writable_debug_log_path(log_dir)
+    root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
 
     verbose_formatter = logging.Formatter(
@@ -106,3 +104,10 @@ def configure_debug_logging(enabled: bool, log_dir: Path | None = None, console:
     logger.debug("Current working directory: %s", Path.cwd())
     logger.debug("Frozen executable: %s", getattr(sys, "frozen", False))
     return log_path
+
+
+def close_logging_handlers() -> None:
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+        handler.close()
