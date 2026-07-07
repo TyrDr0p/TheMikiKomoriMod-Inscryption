@@ -14,6 +14,7 @@ from pathlib import Path
 APP_NAME = "InscryptionCardGenerator"
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ENTRY_POINT = ROOT_DIR / "1 Card Generator" / "Card_Generator.py"
+SCHEMA_DIR = ROOT_DIR / "schemas" / "jsoncardloader"
 BUILD_DIR = ROOT_DIR / "build" / "pyinstaller"
 PYINSTALLER_CACHE_DIR = ROOT_DIR / "build" / "pyinstaller-cache"
 DIST_DIR = ROOT_DIR / "dist"
@@ -42,6 +43,7 @@ def current_arch_tag() -> str:
 
 def pyinstaller_command() -> list[str]:
     os_tag = current_os_tag()
+    data_separator = ";" if os_tag == "windows" else ":"
     command = [
         sys.executable,
         "-m",
@@ -58,6 +60,8 @@ def pyinstaller_command() -> list[str]:
         str(BUILD_DIR),
         "--specpath",
         str(ROOT_DIR),
+        "--add-data",
+        f"{SCHEMA_DIR}{data_separator}schemas/jsoncardloader",
         str(ENTRY_POINT),
     ]
 
@@ -122,6 +126,9 @@ def main() -> int:
 
     if not ENTRY_POINT.exists():
         print(f"Entry point not found: {ENTRY_POINT}", file=sys.stderr)
+        return 1
+    if not SCHEMA_DIR.exists():
+        print(f"Schema directory not found: {SCHEMA_DIR}", file=sys.stderr)
         return 1
 
     if shutil.which("upx") and current_os_tag() in {"windows", "linux"}:
