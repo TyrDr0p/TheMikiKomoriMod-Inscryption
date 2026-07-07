@@ -42,6 +42,24 @@ def responsive_column_count(width: int, preferred_columns: int, min_item_width: 
     return max(1, min(preferred_columns, width // min_item_width))
 
 
+def clamp_sash_position(position: int, total_width: int, min_form_width: int, min_preview_width: int) -> int:
+    if total_width <= 1:
+        return position
+
+    min_form_width = max(1, min_form_width)
+    min_preview_width = max(1, min_preview_width)
+    max_form_width = max(1, total_width - min_preview_width)
+    if max_form_width < min_form_width:
+        return max_form_width
+    return min(max(position, min_form_width), max_form_width)
+
+
+def default_sash_position(total_width: int, preview_ratio: float, min_form_width: int, min_preview_width: int) -> int:
+    preview_ratio = min(max(preview_ratio, 0.05), 0.8)
+    position = round(total_width * (1 - preview_ratio))
+    return clamp_sash_position(position, total_width, min_form_width, min_preview_width)
+
+
 class ResponsiveCheckboxGroup(ttk.Frame):
     def __init__(self, master, vars_by_key, labels=None, tooltips=None, preferred_columns=3, min_item_width=220, **kwargs):
         super().__init__(master, **kwargs)
@@ -64,15 +82,20 @@ class ResponsiveCheckboxGroup(ttk.Frame):
         self._layout_items()
 
     def _layout_items(self, _event=None):
-        columns = responsive_column_count(self.winfo_width(), self.preferred_columns, self.min_item_width)
+        item_width = self._minimum_column_width()
+        columns = responsive_column_count(self.winfo_width(), self.preferred_columns, item_width)
 
         for index in range(self.preferred_columns):
-            self.columnconfigure(index, weight=0)
+            self.columnconfigure(index, weight=0, minsize=0, uniform="")
         for index in range(columns):
-            self.columnconfigure(index, weight=1, uniform="checkbox")
+            self.columnconfigure(index, weight=0, minsize=item_width, uniform="")
 
         for index, checkbutton in enumerate(self.checkbuttons):
             checkbutton.grid(row=index // columns, column=index % columns, sticky=tk.W, padx=(0, 12), pady=1)
+
+    def _minimum_column_width(self):
+        requested_widths = [checkbutton.winfo_reqwidth() + 18 for checkbutton in self.checkbuttons]
+        return max([self.min_item_width, *requested_widths])
 
 
 class ToolTip:

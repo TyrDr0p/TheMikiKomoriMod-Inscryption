@@ -37,7 +37,7 @@ from generator_core.appearance import BUNDLED_FONT_FILES, PALETTES, bundled_font
 from generator_core.scroll import mousewheel_units  # noqa: E402
 from generator_core.schemas import validate_output  # noqa: E402
 from generator_core.sigil_behavior import build_action, build_behavior_entry, merge_action  # noqa: E402
-from generator_core.ui_helpers import responsive_column_count  # noqa: E402
+from generator_core.ui_helpers import clamp_sash_position, default_sash_position, responsive_column_count  # noqa: E402
 
 
 class BuilderValidationTests(unittest.TestCase):
@@ -157,6 +157,15 @@ class ResponsiveLayoutTests(unittest.TestCase):
         self.assertEqual(4, responsive_column_count(1200, 4, 220))
         self.assertEqual(2, responsive_column_count(520, 4, 220))
         self.assertEqual(1, responsive_column_count(200, 4, 220))
+        self.assertEqual(1, responsive_column_count(700, 4, 360))
+
+    def test_pane_default_uses_preview_ratio_when_space_allows(self):
+        self.assertEqual(1120, default_sash_position(1400, 0.20, 700, 220))
+
+    def test_pane_clamp_keeps_form_and_preview_usable(self):
+        self.assertEqual(700, clamp_sash_position(300, 1200, 700, 220))
+        self.assertEqual(980, clamp_sash_position(1100, 1200, 700, 220))
+        self.assertEqual(580, clamp_sash_position(300, 800, 700, 220))
 
 
 class AppearanceTests(unittest.TestCase):
