@@ -40,7 +40,9 @@ Open the tab for the output type you want:
 - **Tribes** saves tribe definitions as `_tribe.jldr2`.
 - **Talking Cards** saves talking card definitions as `_talk.jldr2`.
 
-Each tab includes a form, **Reset Form**, **Preview / Validate**, **Save**, and a read-only JSON preview. The app validates against checked-in JSONCardLoader schema fixtures before saving and shows any schema errors in the preview/status area.
+Each tab includes a form, **Reset Form**, **Preview / Validate**, **Save**, a light/dark mode switcher, and a read-only JSON preview. The divider between the form and preview can be dragged, form sections can be expanded or collapsed, and long checkbox groups automatically reflow to the available width. The app validates against checked-in JSONCardLoader schema fixtures before saving and shows any schema errors in the preview/status area.
+
+The app bundles DejaVu Sans fonts and uses Tk named-font fallbacks if private font registration is unavailable on a user's operating system.
 
 For Cards, enter the unprefixed card ID and optional mod prefix. The generated JSON keeps `name` and `modPrefix` separate, matching JSONCardLoader's card schema.
 
@@ -88,6 +90,7 @@ GitHub Actions builds Windows, Linux, and macOS packages on every push to `main`
 ## Repository Folders
 
 - `1 Card Generator/` - the Python card generator app.
+- `assets/fonts/` - bundled DejaVu Sans fonts for consistent cross-platform UI text.
 - `schemas/jsoncardloader/` - local JSONCardLoader schema fixtures used for validation.
 - `Artwork/` - exported artwork files.
 - `Artwork Projects/` - source artwork projects.

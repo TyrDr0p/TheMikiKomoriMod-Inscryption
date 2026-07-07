@@ -49,11 +49,14 @@ from generator_core.constants import (
     TRIBES,
     VOICE_IDS,
 )
+from generator_core.appearance import AppearanceManager
 from generator_core.schema_editor import JSONSchemaTextEditor
 from generator_core.schemas import load_schema
 from generator_core.scroll import ScrollableFrame
 from generator_core.sigil_behavior import build_action, build_behavior_entry, merge_action
 from generator_core.ui_helpers import (
+    CollapsibleSection,
+    ResponsiveCheckboxGroup,
     ToolTip,
     choose_audio,
     choose_image,
@@ -72,25 +75,45 @@ class GeneratorTab(ttk.Frame):
 
     def _build_layout(self):
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
-        self.form = ScrollableFrame(self)
-        self.form.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
-        right = ttk.Frame(self)
-        right.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        self.panes = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        self.panes.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+        self.form = ScrollableFrame(self.panes)
+        self.panes.add(self.form, weight=3)
+
+        right = ttk.Frame(self.panes)
+        self.panes.add(right, weight=2)
         right.rowconfigure(1, weight=1)
         right.columnconfigure(0, weight=1)
         ttk.Label(right, text="JSON Preview", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky=tk.W)
-        self.preview = tk.Text(right, width=58, height=30, wrap=tk.NONE, state=tk.DISABLED)
-        self.preview.grid(row=1, column=0, sticky="nsew", pady=(5, 5))
-        ttk.Label(right, textvariable=self.status, foreground="#6a3b00", wraplength=520).grid(row=2, column=0, sticky=tk.W)
+        preview_frame = ttk.Frame(right)
+        preview_frame.grid(row=1, column=0, sticky="nsew", pady=(5, 5))
+        preview_frame.rowconfigure(0, weight=1)
+        preview_frame.columnconfigure(0, weight=1)
+        self.preview = tk.Text(preview_frame, width=58, height=30, wrap=tk.NONE, state=tk.DISABLED)
+        preview_y = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self.preview.yview)
+        preview_x = ttk.Scrollbar(preview_frame, orient=tk.HORIZONTAL, command=self.preview.xview)
+        self.preview.configure(yscrollcommand=preview_y.set, xscrollcommand=preview_x.set)
+        self.preview.grid(row=0, column=0, sticky="nsew")
+        preview_y.grid(row=0, column=1, sticky="ns")
+        preview_x.grid(row=1, column=0, sticky="ew")
+        ttk.Label(right, textvariable=self.status, style="Status.TLabel", wraplength=520).grid(
+            row=2, column=0, sticky=tk.W
+        )
+
+    def section(self, parent, row, title, expanded=True):
+        section = CollapsibleSection(parent, title, expanded=expanded)
+        section.grid(row=row, column=0, columnspan=3, sticky="ew")
+        section.body.columnconfigure(1, weight=1)
+        return section.body, row + 1
 
     def labeled_entry(self, parent, row, label, var, width=36, tooltip=None):
         label_widget = ttk.Label(parent, text=label)
         label_widget.grid(row=row, column=0, sticky=tk.W, pady=2)
         if tooltip:
             ToolTip(label_widget, tooltip)
-        ttk.Entry(parent, textvariable=var, width=width).grid(row=row, column=1, sticky=tk.W, pady=2)
+        ttk.Entry(parent, textvariable=var, width=width).grid(row=row, column=1, sticky="ew", pady=2)
         return row + 1
 
     def labeled_spin(self, parent, row, label, var, from_=0, to=99, increment=1, width=7, tooltip=None):
@@ -109,7 +132,7 @@ class GeneratorTab(ttk.Frame):
         if tooltip:
             ToolTip(label_widget, tooltip)
         combo = ttk.Combobox(parent, textvariable=var, values=values, state="readonly", width=width)
-        combo.grid(row=row, column=1, sticky=tk.W, pady=2)
+        combo.grid(row=row, column=1, sticky="ew", pady=2)
         if tooltips:
             tooltip = ToolTip(combo, tooltips.get(var.get(), ""))
             var.trace_add("write", lambda *_args: setattr(tooltip, "text", tooltips.get(var.get(), "")))
@@ -120,7 +143,7 @@ class GeneratorTab(ttk.Frame):
         label_widget.grid(row=row, column=0, sticky=tk.W, pady=2)
         if tooltip:
             ToolTip(label_widget, tooltip)
-        ttk.Entry(parent, textvariable=var, width=34).grid(row=row, column=1, sticky=tk.W, pady=2)
+        ttk.Entry(parent, textvariable=var, width=34).grid(row=row, column=1, sticky="ew", pady=2)
         ttk.Button(parent, text="Browse...", command=lambda: choose_image(var)).grid(row=row, column=2, sticky=tk.W, padx=5)
         return row + 1
 
@@ -133,15 +156,14 @@ class GeneratorTab(ttk.Frame):
 
     def checkbox_group(self, parent, row, title, vars_by_key, columns=3, labels=None, tooltips=None):
         ttk.Label(parent, text=title).grid(row=row, column=0, sticky=tk.NW, pady=(8, 2))
-        frame = ttk.Frame(parent)
-        frame.grid(row=row, column=1, columnspan=2, sticky=tk.W, pady=(8, 2))
-        for index, (key, var) in enumerate(vars_by_key.items()):
-            text = labels.get(key, key) if labels else key
-            cb = ttk.Checkbutton(frame, text=text, variable=var)
-            cb.grid(row=index // columns, column=index % columns, sticky=tk.W, padx=(0, 12))
-            tooltip = tooltips.get(key, "") if tooltips else ""
-            if tooltip:
-                ToolTip(cb, tooltip)
+        group = ResponsiveCheckboxGroup(
+            parent,
+            vars_by_key,
+            labels=labels,
+            tooltips=tooltips,
+            preferred_columns=columns,
+        )
+        group.grid(row=row, column=1, columnspan=2, sticky="ew", pady=(8, 2))
         return row + 1
 
     def selected(self, vars_by_key):
@@ -198,73 +220,72 @@ class CardsTab(GeneratorTab):
         self.title_graphic = tk.StringVar()
         self.decals = tk.StringVar()
 
+        parent.columnconfigure(0, weight=1)
         row = 0
-        ttk.Label(parent, text="Card Identity", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W)
-        row += 1
-        row = self.labeled_entry(parent, row, "Card ID", self.card_id)
-        row = self.labeled_entry(parent, row, "Mod Prefix", self.mod_prefix, width=20)
-        row = self.labeled_entry(parent, row, "Displayed Name", self.displayed_name)
-        row = self.labeled_entry(parent, row, "Description", self.description, width=50)
-        row = self.labeled_combo(parent, row, "Complexity", self.card_complexity, CARD_COMPLEXITIES, tooltips=CARD_COMPLEXITY_TOOLTIPS)
-        row = self.labeled_combo(parent, row, "Temple", self.temple, TEMPLES, tooltips=TEMPLE_TOOLTIPS)
 
-        ttk.Label(parent, text="Stats & Costs", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.labeled_spin(parent, row, "Attack", self.base_attack)
-        row = self.labeled_spin(parent, row, "Health", self.base_health, from_=1)
-        row = self.labeled_spin(parent, row, "Blood Cost", self.blood_cost, to=10)
-        row = self.labeled_spin(parent, row, "Bones Cost", self.bones_cost, to=30)
-        row = self.labeled_spin(parent, row, "Energy Cost", self.energy_cost, to=10)
-        ttk.Checkbutton(parent, text="Hide Attack and Health", variable=self.hide_attack_and_health).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
-        row = self.checkbox_group(parent, row, "Gems Cost", self.gems_cost)
+        section, row = self.section(parent, row, "Card Identity")
+        section_row = 0
+        section_row = self.labeled_entry(section, section_row, "Card ID", self.card_id)
+        section_row = self.labeled_entry(section, section_row, "Mod Prefix", self.mod_prefix, width=20)
+        section_row = self.labeled_entry(section, section_row, "Displayed Name", self.displayed_name)
+        section_row = self.labeled_entry(section, section_row, "Description", self.description, width=50)
+        section_row = self.labeled_combo(section, section_row, "Complexity", self.card_complexity, CARD_COMPLEXITIES, tooltips=CARD_COMPLEXITY_TOOLTIPS)
+        section_row = self.labeled_combo(section, section_row, "Temple", self.temple, TEMPLES, tooltips=TEMPLE_TOOLTIPS)
 
-        ttk.Label(parent, text="Categories", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.checkbox_group(parent, row, "Tribes", self.tribe_vars, columns=3)
-        row = self.checkbox_group(parent, row, "Traits", self.trait_vars, columns=3, tooltips=TRAIT_TOOLTIPS)
-        row = self.labeled_combo(
-            parent, row, "Special Stat Icon", self.special_stat_icon, ["None"] + SPECIAL_STAT_ICONS,
+        section, row = self.section(parent, row, "Stats & Costs")
+        section_row = 0
+        section_row = self.labeled_spin(section, section_row, "Attack", self.base_attack)
+        section_row = self.labeled_spin(section, section_row, "Health", self.base_health, from_=1)
+        section_row = self.labeled_spin(section, section_row, "Blood Cost", self.blood_cost, to=10)
+        section_row = self.labeled_spin(section, section_row, "Bones Cost", self.bones_cost, to=30)
+        section_row = self.labeled_spin(section, section_row, "Energy Cost", self.energy_cost, to=10)
+        ttk.Checkbutton(section, text="Hide Attack and Health", variable=self.hide_attack_and_health).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
+        section_row = self.checkbox_group(section, section_row, "Gems Cost", self.gems_cost)
+
+        section, row = self.section(parent, row, "Categories")
+        section_row = 0
+        section_row = self.checkbox_group(section, section_row, "Tribes", self.tribe_vars, columns=3)
+        section_row = self.checkbox_group(section, section_row, "Traits", self.trait_vars, columns=3, tooltips=TRAIT_TOOLTIPS)
+        section_row = self.labeled_combo(
+            section, section_row, "Special Stat Icon", self.special_stat_icon, ["None"] + SPECIAL_STAT_ICONS,
             tooltips=SPECIAL_STAT_ICON_TOOLTIPS,
         )
-        row = self.checkbox_group(parent, row, "Appearance Behaviours", self.appearance_vars, columns=3, tooltips=APPEARANCE_BEHAVIOUR_TOOLTIPS)
-        row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4, tooltips=META_CATEGORY_TOOLTIPS)
-        row = self.checkbox_group(
-            parent, row, "Abilities", self.ability_vars, columns=4,
+        section_row = self.checkbox_group(section, section_row, "Appearance Behaviours", self.appearance_vars, columns=3, tooltips=APPEARANCE_BEHAVIOUR_TOOLTIPS)
+        section_row = self.checkbox_group(section, section_row, "Meta Categories", self.meta_categories, columns=4, tooltips=META_CATEGORY_TOOLTIPS)
+        section_row = self.checkbox_group(
+            section, section_row, "Abilities", self.ability_vars, columns=4,
             labels={a["internal"]: a["display"] for a in ABILITIES},
             tooltips=ABILITY_TOOLTIPS,
         )
-        row = self.checkbox_group(parent, row, "Special Abilities", self.special_ability_vars, columns=4, tooltips=SPECIAL_ABILITY_TOOLTIPS)
-        row = self.labeled_entry(parent, row, "Custom Special Abilities (comma-separated)", self.custom_special, width=50)
+        section_row = self.checkbox_group(section, section_row, "Special Abilities", self.special_ability_vars, columns=4, tooltips=SPECIAL_ABILITY_TOOLTIPS)
+        section_row = self.labeled_entry(section, section_row, "Custom Special Abilities (comma-separated)", self.custom_special, width=50)
 
-        ttk.Label(parent, text="Optional Card Links", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.labeled_entry(parent, row, "Evolve Into Name", self.evolve_into_name)
-        row = self.labeled_spin(parent, row, "Evolve Turns", self.evolve_turns, to=20)
-        row = self.labeled_entry(parent, row, "Default Evolution Name", self.default_evolution_name)
-        row = self.labeled_entry(parent, row, "Tail Name", self.tail_name)
-        row = self.image_entry(parent, row, "Tail Lost Portrait", self.tail_lost_portrait)
-        row = self.labeled_entry(parent, row, "Ice Cube Name", self.ice_cube_name)
-        ttk.Checkbutton(parent, text="Flip Portrait For Strafe", variable=self.flip_portrait_for_strafe).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
-        ttk.Checkbutton(parent, text="One Per Deck", variable=self.one_per_deck).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
+        section, row = self.section(parent, row, "Optional Card Links", expanded=False)
+        section_row = 0
+        section_row = self.labeled_entry(section, section_row, "Evolve Into Name", self.evolve_into_name)
+        section_row = self.labeled_spin(section, section_row, "Evolve Turns", self.evolve_turns, to=20)
+        section_row = self.labeled_entry(section, section_row, "Default Evolution Name", self.default_evolution_name)
+        section_row = self.labeled_entry(section, section_row, "Tail Name", self.tail_name)
+        section_row = self.image_entry(section, section_row, "Tail Lost Portrait", self.tail_lost_portrait)
+        section_row = self.labeled_entry(section, section_row, "Ice Cube Name", self.ice_cube_name)
+        ttk.Checkbutton(section, text="Flip Portrait For Strafe", variable=self.flip_portrait_for_strafe).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
+        ttk.Checkbutton(section, text="One Per Deck", variable=self.one_per_deck).grid(row=section_row, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(parent, text="Textures", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.image_entry(parent, row, "Texture", self.texture)
-        row = self.image_entry(parent, row, "Emission Texture", self.emission_texture)
-        row = self.image_entry(parent, row, "Alt Texture", self.alt_texture)
-        row = self.image_entry(parent, row, "Alt Emission Texture", self.alt_emission_texture)
-        row = self.image_entry(parent, row, "Pixel Texture", self.pixel_texture)
-        row = self.image_entry(parent, row, "Title Graphic", self.title_graphic)
-        row = self.labeled_entry(parent, row, "Decals (comma-separated)", self.decals, width=50)
+        section, row = self.section(parent, row, "Textures", expanded=False)
+        section_row = 0
+        section_row = self.image_entry(section, section_row, "Texture", self.texture)
+        section_row = self.image_entry(section, section_row, "Emission Texture", self.emission_texture)
+        section_row = self.image_entry(section, section_row, "Alt Texture", self.alt_texture)
+        section_row = self.image_entry(section, section_row, "Alt Emission Texture", self.alt_emission_texture)
+        section_row = self.image_entry(section, section_row, "Pixel Texture", self.pixel_texture)
+        section_row = self.image_entry(section, section_row, "Title Graphic", self.title_graphic)
+        section_row = self.labeled_entry(section, section_row, "Decals (comma-separated)", self.decals, width=50)
 
-        ttk.Label(parent, text="Extension Properties JSON", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        self.extension_properties = tk.Text(parent, height=4, width=58)
-        self.extension_properties.grid(row=row, column=0, columnspan=3, sticky=tk.W)
-        row += 1
+        section, row = self.section(parent, row, "Extension Properties JSON", expanded=False)
+        self.extension_properties = tk.Text(section, height=4, width=58)
+        self.extension_properties.grid(row=0, column=0, columnspan=3, sticky="ew")
         self.action_buttons(parent, row, "Save Card .jldr2")
 
     def data(self):
@@ -416,108 +437,105 @@ class SigilsTab(GeneratorTab):
         self.message_emotion = tk.StringVar()
         self.letter_animation = tk.StringVar()
         self.speaker = tk.StringVar()
+        parent.columnconfigure(0, weight=1)
         row = 0
-        ttk.Label(parent, text="Sigil Identity", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W)
-        row += 1
-        row = self.labeled_entry(parent, row, "Name", self.name, tooltip="Required string for the name of your sigil.")
-        row = self.labeled_entry(parent, row, "GUID", self.guid, tooltip="Required string that identifies the sigil.")
-        row = self.labeled_entry(parent, row, "Description", self.description, width=50, tooltip="Optional rulebook description for the sigil.")
-        row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4, tooltips=META_CATEGORY_TOOLTIPS)
-        row = self.image_entry(parent, row, "Texture", self.texture, tooltip="Optional sigil artwork. Configils expects a 49x49 .png.")
-        row = self.image_entry(parent, row, "Pixel Texture", self.pixel_texture, tooltip="Optional pixel sigil artwork. Configils expects a 17x17 .png.")
-        row = self.labeled_spin(parent, row, "Power Level", self.power_level, to=99, tooltip="Affects rarity in cave trials, sigil nodes, and Leshy's totem battles.")
-        row = self.labeled_spin(parent, row, "Priority", self.priority, to=99, tooltip="Controls activation order. Lower priority sigils activate before higher priority sigils.")
-        opponent_usable = ttk.Checkbutton(parent, text="Opponent Usable", variable=self.opponent_usable)
-        opponent_usable.grid(row=row, column=1, sticky=tk.W)
-        ToolTip(opponent_usable, "Determines whether the sigil can appear on Leshy's totems.")
-        row += 1
-        can_stack = ttk.Checkbutton(parent, text="Can Stack", variable=self.can_stack)
-        can_stack.grid(row=row, column=1, sticky=tk.W)
-        ToolTip(can_stack, "Determines whether multiple copies of this sigil can stack on one card.")
-        row += 1
-        is_special = ttk.Checkbutton(parent, text="Is Special Ability", variable=self.is_special_ability)
-        is_special.grid(row=row, column=1, sticky=tk.W)
-        ToolTip(is_special, "If true, Configils treats this as a special ability and several rulebook fields are no longer required.")
-        row += 1
 
-        ttk.Label(parent, text="Activation Cost", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.labeled_spin(parent, row, "Bones", self.bones_cost, to=30, tooltip="Bone token cost to activate the sigil.")
-        row = self.labeled_spin(parent, row, "Energy", self.energy_cost, to=10, tooltip="Energy cost to activate the sigil.")
-        row = self.labeled_spin(parent, row, "Blood", self.blood_cost, to=10, tooltip="Number of creatures that must be sacrificed to activate the sigil.")
-        ttk.Label(parent, text="Gems").grid(row=row, column=0, sticky=tk.NW)
-        gems = ttk.Frame(parent)
-        gems.grid(row=row, column=1, sticky=tk.W)
+        section, row = self.section(parent, row, "Sigil Identity")
+        section_row = 0
+        section_row = self.labeled_entry(section, section_row, "Name", self.name, tooltip="Required string for the name of your sigil.")
+        section_row = self.labeled_entry(section, section_row, "GUID", self.guid, tooltip="Required string that identifies the sigil.")
+        section_row = self.labeled_entry(section, section_row, "Description", self.description, width=50, tooltip="Optional rulebook description for the sigil.")
+        section_row = self.checkbox_group(section, section_row, "Meta Categories", self.meta_categories, columns=4, tooltips=META_CATEGORY_TOOLTIPS)
+        section_row = self.image_entry(section, section_row, "Texture", self.texture, tooltip="Optional sigil artwork. Configils expects a 49x49 .png.")
+        section_row = self.image_entry(section, section_row, "Pixel Texture", self.pixel_texture, tooltip="Optional pixel sigil artwork. Configils expects a 17x17 .png.")
+        section_row = self.labeled_spin(section, section_row, "Power Level", self.power_level, to=99, tooltip="Affects rarity in cave trials, sigil nodes, and Leshy's totem battles.")
+        section_row = self.labeled_spin(section, section_row, "Priority", self.priority, to=99, tooltip="Controls activation order. Lower priority sigils activate before higher priority sigils.")
+        opponent_usable = ttk.Checkbutton(section, text="Opponent Usable", variable=self.opponent_usable)
+        opponent_usable.grid(row=section_row, column=1, sticky=tk.W)
+        ToolTip(opponent_usable, "Determines whether the sigil can appear on Leshy's totems.")
+        section_row += 1
+        can_stack = ttk.Checkbutton(section, text="Can Stack", variable=self.can_stack)
+        can_stack.grid(row=section_row, column=1, sticky=tk.W)
+        ToolTip(can_stack, "Determines whether multiple copies of this sigil can stack on one card.")
+        section_row += 1
+        is_special = ttk.Checkbutton(section, text="Is Special Ability", variable=self.is_special_ability)
+        is_special.grid(row=section_row, column=1, sticky=tk.W)
+        ToolTip(is_special, "If true, Configils treats this as a special ability and several rulebook fields are no longer required.")
+
+        section, row = self.section(parent, row, "Activation Cost", expanded=False)
+        section_row = 0
+        section_row = self.labeled_spin(section, section_row, "Bones", self.bones_cost, to=30, tooltip="Bone token cost to activate the sigil.")
+        section_row = self.labeled_spin(section, section_row, "Energy", self.energy_cost, to=10, tooltip="Energy cost to activate the sigil.")
+        section_row = self.labeled_spin(section, section_row, "Blood", self.blood_cost, to=10, tooltip="Number of creatures that must be sacrificed to activate the sigil.")
+        ttk.Label(section, text="Gems").grid(row=section_row, column=0, sticky=tk.NW)
+        gems = ttk.Frame(section)
+        gems.grid(row=section_row, column=1, sticky=tk.W)
         for gem, var in self.gems_cost.items():
             ttk.Checkbutton(gems, text=gem, variable=var).pack(side=tk.LEFT)
-        row += 1
 
-        ttk.Label(parent, text="Ability Behaviour Builder", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.labeled_combo(
-            parent, row, "Trigger", self.trigger_type, CONFIGIL_TRIGGER_TYPES, width=28,
+        section, row = self.section(parent, row, "Ability Behaviour Builder")
+        section_row = 0
+        section_row = self.labeled_combo(
+            section, section_row, "Trigger", self.trigger_type, CONFIGIL_TRIGGER_TYPES, width=28,
             tooltips=CONFIGIL_TRIGGER_TOOLTIPS,
         )
-        row = self.labeled_entry(
-            parent, row, "Trigger Condition", self.trigger_condition, width=52,
+        section_row = self.labeled_entry(
+            section, section_row, "Trigger Condition", self.trigger_condition, width=52,
             tooltip="Optional condition that must evaluate to true for the sigil to activate.",
         )
-        row = self.labeled_entry(
-            parent, row, "Health Level", self.trigger_health_level, width=12,
+        section_row = self.labeled_entry(
+            section, section_row, "Health Level", self.trigger_health_level, width=12,
             tooltip="Used by OnHealthLevel. The trigger fires when health is reduced to this value or lower.",
         )
-        row = self.checkbox_group(parent, row, "Action Order", self.action_order_vars, columns=4, tooltips=CONFIGIL_ACTION_TOOLTIPS)
+        section_row = self.checkbox_group(section, section_row, "Action Order", self.action_order_vars, columns=4, tooltips=CONFIGIL_ACTION_TOOLTIPS)
 
-        row = self.labeled_combo(
-            parent, row, "Action Template", self.action_type, CONFIGIL_ACTION_TYPES, width=28,
+        section_row = self.labeled_combo(
+            section, section_row, "Action Template", self.action_type, CONFIGIL_ACTION_TYPES, width=28,
             tooltips=CONFIGIL_ACTION_TOOLTIPS,
         )
-        row = self.labeled_entry(parent, row, "Action Condition", self.action_condition, width=52, tooltip=CONFIGIL_FIELD_TOOLTIPS["condition"])
-        row = self.labeled_entry(parent, row, "Primary Slot Index", self.slot_index, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["slot"])
-        ttk.Checkbutton(parent, text="Primary Slot Is Opponent Slot", variable=self.slot_opponent).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
-        row = self.labeled_entry(parent, row, "Secondary Slot Index", self.secondary_slot_index, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["slot"])
-        ttk.Checkbutton(parent, text="Secondary Slot Is Opponent Slot", variable=self.secondary_slot_opponent).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
-        row = self.labeled_entry(parent, row, "Card Name", self.action_card_name, width=36, tooltip=CONFIGIL_FIELD_TOOLTIPS["card"])
-        row = self.labeled_entry(parent, row, "Target Card", self.action_target_card, width=36, tooltip=CONFIGIL_FIELD_TOOLTIPS["targetCard"])
-        ttk.Checkbutton(parent, text="Retain Mods", variable=self.retain_mods).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
-        ttk.Checkbutton(parent, text="Replace Existing Card", variable=self.replace_action).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
+        section_row = self.labeled_entry(section, section_row, "Action Condition", self.action_condition, width=52, tooltip=CONFIGIL_FIELD_TOOLTIPS["condition"])
+        section_row = self.labeled_entry(section, section_row, "Primary Slot Index", self.slot_index, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["slot"])
+        ttk.Checkbutton(section, text="Primary Slot Is Opponent Slot", variable=self.slot_opponent).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
+        section_row = self.labeled_entry(section, section_row, "Secondary Slot Index", self.secondary_slot_index, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["slot"])
+        ttk.Checkbutton(section, text="Secondary Slot Is Opponent Slot", variable=self.secondary_slot_opponent).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
+        section_row = self.labeled_entry(section, section_row, "Card Name", self.action_card_name, width=36, tooltip=CONFIGIL_FIELD_TOOLTIPS["card"])
+        section_row = self.labeled_entry(section, section_row, "Target Card", self.action_target_card, width=36, tooltip=CONFIGIL_FIELD_TOOLTIPS["targetCard"])
+        ttk.Checkbutton(section, text="Retain Mods", variable=self.retain_mods).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
+        ttk.Checkbutton(section, text="Replace Existing Card", variable=self.replace_action).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
 
-        row = self.labeled_entry(parent, row, "Heal Amount", self.heal_amount, width=20)
-        row = self.labeled_entry(parent, row, "Add Stats", self.add_stats, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["stats"])
-        row = self.labeled_entry(parent, row, "Set Stats", self.set_stats, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["stats"])
-        row = self.labeled_entry(parent, row, "Add Ability", self.add_ability, width=36)
-        row = self.labeled_entry(parent, row, "Remove Ability", self.remove_ability, width=36)
-        ttk.Checkbutton(parent, text="Added Ability Is Infused", variable=self.infused_ability).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
-        row = self.labeled_entry(parent, row, "Damage", self.damage_amount, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["damage"])
-        row = self.labeled_entry(parent, row, "Gain Bones", self.gain_bones, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
-        row = self.labeled_entry(parent, row, "Gain Energy", self.gain_energy, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
-        row = self.labeled_entry(parent, row, "Gain Foils", self.gain_foils, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
-        row = self.labeled_combo(parent, row, "Strafe Direction", self.strafe_direction, ["None"] + CONFIGIL_STRAFE_DIRECTIONS, width=16)
-        ttk.Checkbutton(parent, text="Flip Sigil On Bounce", variable=self.flip_sigil).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
-        row = self.labeled_entry(parent, row, "Message", self.message_text, width=52)
-        row = self.labeled_entry(parent, row, "Message Length", self.message_length, width=12, tooltip=CONFIGIL_FIELD_TOOLTIPS["messageLength"])
-        row = self.labeled_combo(parent, row, "Message Emotion", self.message_emotion, CONFIGIL_MESSAGE_EMOTIONS, width=18)
-        row = self.labeled_combo(parent, row, "Letter Animation", self.letter_animation, CONFIGIL_LETTER_ANIMATIONS, width=18)
-        row = self.labeled_combo(parent, row, "Speaker", self.speaker, CONFIGIL_SPEAKERS, width=28)
+        section_row = self.labeled_entry(section, section_row, "Heal Amount", self.heal_amount, width=20)
+        section_row = self.labeled_entry(section, section_row, "Add Stats", self.add_stats, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["stats"])
+        section_row = self.labeled_entry(section, section_row, "Set Stats", self.set_stats, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["stats"])
+        section_row = self.labeled_entry(section, section_row, "Add Ability", self.add_ability, width=36)
+        section_row = self.labeled_entry(section, section_row, "Remove Ability", self.remove_ability, width=36)
+        ttk.Checkbutton(section, text="Added Ability Is Infused", variable=self.infused_ability).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
+        section_row = self.labeled_entry(section, section_row, "Damage", self.damage_amount, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["damage"])
+        section_row = self.labeled_entry(section, section_row, "Gain Bones", self.gain_bones, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
+        section_row = self.labeled_entry(section, section_row, "Gain Energy", self.gain_energy, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
+        section_row = self.labeled_entry(section, section_row, "Gain Foils", self.gain_foils, width=20, tooltip=CONFIGIL_FIELD_TOOLTIPS["currency"])
+        section_row = self.labeled_combo(section, section_row, "Strafe Direction", self.strafe_direction, ["None"] + CONFIGIL_STRAFE_DIRECTIONS, width=16)
+        ttk.Checkbutton(section, text="Flip Sigil On Bounce", variable=self.flip_sigil).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+        section_row += 1
+        section_row = self.labeled_entry(section, section_row, "Message", self.message_text, width=52)
+        section_row = self.labeled_entry(section, section_row, "Message Length", self.message_length, width=12, tooltip=CONFIGIL_FIELD_TOOLTIPS["messageLength"])
+        section_row = self.labeled_combo(section, section_row, "Message Emotion", self.message_emotion, CONFIGIL_MESSAGE_EMOTIONS, width=18)
+        section_row = self.labeled_combo(section, section_row, "Letter Animation", self.letter_animation, CONFIGIL_LETTER_ANIMATIONS, width=18)
+        section_row = self.labeled_combo(section, section_row, "Speaker", self.speaker, CONFIGIL_SPEAKERS, width=28)
 
-        builder_buttons = ttk.Frame(parent)
-        builder_buttons.grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(8, 4))
+        builder_buttons = ttk.Frame(section)
+        builder_buttons.grid(row=section_row, column=0, columnspan=3, sticky=tk.W, pady=(8, 4))
         ttk.Button(builder_buttons, text="Replace Behavior With Template", command=self.replace_behavior_from_builder).pack(side=tk.LEFT)
         ttk.Button(builder_buttons, text="Append New Triggered Behavior", command=self.append_behavior_from_builder).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(builder_buttons, text="Add Action To First Behavior", command=self.add_action_to_first_behavior).pack(side=tk.LEFT, padx=(8, 0))
-        row += 1
 
-        ttk.Label(parent, text="Advanced Ability Behaviour JSON", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        self.behavior_editor = JSONSchemaTextEditor(parent, self.behavior_schema, [], height=18)
-        self.behavior_editor.grid(row=row, column=0, columnspan=3, sticky="nsew")
-        row += 1
+        section, row = self.section(parent, row, "Advanced Ability Behaviour JSON", expanded=False)
+        self.behavior_editor = JSONSchemaTextEditor(section, self.behavior_schema, [], height=18)
+        self.behavior_editor.grid(row=0, column=0, columnspan=3, sticky="nsew")
         self.action_buttons(parent, row, "Save Sigil _sigil.jldr2")
 
     def selected_gems(self):
@@ -708,20 +726,20 @@ class TribesTab(GeneratorTab):
         self.tribe_icon = tk.StringVar()
         self.appear = tk.BooleanVar()
         self.choice_back = tk.StringVar()
+        parent.columnconfigure(0, weight=1)
         row = 0
-        ttk.Label(parent, text="Tribe Definition", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W)
-        row += 1
-        row = self.labeled_entry(parent, row, "Name", self.name)
-        row = self.labeled_entry(parent, row, "GUID", self.guid)
-        row = self.image_entry(parent, row, "Tribe Icon", self.tribe_icon)
-        ttk.Checkbutton(parent, text="Appear In Tribe Choices", variable=self.appear).grid(row=row, column=1, sticky=tk.W)
-        row += 1
-        row = self.image_entry(parent, row, "Choice Card Back Texture", self.choice_back)
-        ttk.Label(parent, text="Additional Tribes JSON Array", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        self.extra_tribes = tk.Text(parent, height=8, width=58)
-        self.extra_tribes.grid(row=row, column=0, columnspan=3, sticky=tk.W)
-        row += 1
+        section, row = self.section(parent, row, "Tribe Definition")
+        section_row = 0
+        section_row = self.labeled_entry(section, section_row, "Name", self.name)
+        section_row = self.labeled_entry(section, section_row, "GUID", self.guid)
+        section_row = self.image_entry(section, section_row, "Tribe Icon", self.tribe_icon)
+        ttk.Checkbutton(section, text="Appear In Tribe Choices", variable=self.appear).grid(row=section_row, column=1, sticky=tk.W)
+        section_row += 1
+        section_row = self.image_entry(section, section_row, "Choice Card Back Texture", self.choice_back)
+
+        section, row = self.section(parent, row, "Additional Tribes JSON Array", expanded=False)
+        self.extra_tribes = tk.Text(section, height=8, width=58)
+        self.extra_tribes.grid(row=0, column=0, columnspan=3, sticky="ew")
         self.action_buttons(parent, row, "Save Tribe _tribe.jldr2")
 
     def data(self):
@@ -791,50 +809,45 @@ class TalkingCardsTab(GeneratorTab):
         self.event_choice = tk.StringVar()
         self.event_main_line = tk.StringVar()
         self.event_repeat_line = tk.StringVar()
+        parent.columnconfigure(0, weight=1)
         row = 0
-        ttk.Label(parent, text="Talking Card Sprites", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W)
-        row += 1
-        row = self.labeled_entry(parent, row, "Card Name", self.card_name)
-        row = self.image_entry(parent, row, "Face Sprite", self.face_sprite)
-        row = self.image_entry(parent, row, "Eye Open", self.eye_open)
-        row = self.image_entry(parent, row, "Eye Closed", self.eye_closed)
-        row = self.image_entry(parent, row, "Mouth Open", self.mouth_open)
-        row = self.image_entry(parent, row, "Mouth Closed", self.mouth_closed)
-        row = self.image_entry(parent, row, "Emission Open", self.emission_open)
-        row = self.image_entry(parent, row, "Emission Closed", self.emission_closed)
-        row = self.labeled_spin(parent, row, "Blink Rate", self.blink_rate, from_=0.1, to=10, increment=0.1)
-        row = self.labeled_combo(parent, row, "Voice ID", self.voice_id, VOICE_IDS)
-        row = self.labeled_spin(parent, row, "Voice Pitch", self.voice_pitch, from_=0.1, to=10, increment=0.1)
-        ttk.Label(parent, text="Custom Voice").grid(row=row, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(parent, textvariable=self.custom_voice, width=34).grid(row=row, column=1, sticky=tk.W, pady=2)
-        ttk.Button(parent, text="Browse...", command=lambda: choose_audio(self.custom_voice)).grid(row=row, column=2, sticky=tk.W, padx=5)
-        row += 1
 
-        ttk.Label(parent, text="Emotion Template", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.labeled_combo(parent, row, "Emotion", self.emotion_choice, EMOTION_TYPES)
-        ttk.Button(parent, text="Add Emotion", command=self.add_emotion_template).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
+        section, row = self.section(parent, row, "Talking Card Sprites")
+        section_row = 0
+        section_row = self.labeled_entry(section, section_row, "Card Name", self.card_name)
+        section_row = self.image_entry(section, section_row, "Face Sprite", self.face_sprite)
+        section_row = self.image_entry(section, section_row, "Eye Open", self.eye_open)
+        section_row = self.image_entry(section, section_row, "Eye Closed", self.eye_closed)
+        section_row = self.image_entry(section, section_row, "Mouth Open", self.mouth_open)
+        section_row = self.image_entry(section, section_row, "Mouth Closed", self.mouth_closed)
+        section_row = self.image_entry(section, section_row, "Emission Open", self.emission_open)
+        section_row = self.image_entry(section, section_row, "Emission Closed", self.emission_closed)
+        section_row = self.labeled_spin(section, section_row, "Blink Rate", self.blink_rate, from_=0.1, to=10, increment=0.1)
+        section_row = self.labeled_combo(section, section_row, "Voice ID", self.voice_id, VOICE_IDS)
+        section_row = self.labeled_spin(section, section_row, "Voice Pitch", self.voice_pitch, from_=0.1, to=10, increment=0.1)
+        ttk.Label(section, text="Custom Voice").grid(row=section_row, column=0, sticky=tk.W, pady=2)
+        ttk.Entry(section, textvariable=self.custom_voice, width=34).grid(row=section_row, column=1, sticky="ew", pady=2)
+        ttk.Button(section, text="Browse...", command=lambda: choose_audio(self.custom_voice)).grid(row=section_row, column=2, sticky=tk.W, padx=5)
 
-        ttk.Label(parent, text="Emotions JSON Array", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        self.emotions_editor = JSONSchemaTextEditor(parent, self.emotions_schema, [], height=8)
-        self.emotions_editor.grid(row=row, column=0, columnspan=3, sticky="nsew")
-        row += 1
+        section, row = self.section(parent, row, "Emotion Template", expanded=False)
+        section_row = 0
+        section_row = self.labeled_combo(section, section_row, "Emotion", self.emotion_choice, EMOTION_TYPES)
+        ttk.Button(section, text="Add Emotion", command=self.add_emotion_template).grid(row=section_row, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(parent, text="Dialogue Event Template", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        row = self.labeled_combo(parent, row, "Event Name", self.event_choice, EVENT_NAMES, width=34)
-        row = self.labeled_entry(parent, row, "Main Line", self.event_main_line, width=50)
-        row = self.labeled_entry(parent, row, "Repeat Line", self.event_repeat_line, width=50)
-        ttk.Button(parent, text="Add Dialogue Event", command=self.add_dialogue_event_template).grid(row=row, column=1, sticky=tk.W, pady=2)
-        row += 1
+        section, row = self.section(parent, row, "Emotions JSON Array", expanded=False)
+        self.emotions_editor = JSONSchemaTextEditor(section, self.emotions_schema, [], height=8)
+        self.emotions_editor.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
-        ttk.Label(parent, text="Dialogue Events JSON Array", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
-        row += 1
-        self.events_editor = JSONSchemaTextEditor(parent, self.events_schema, [], height=12)
-        self.events_editor.grid(row=row, column=0, columnspan=3, sticky="nsew")
-        row += 1
+        section, row = self.section(parent, row, "Dialogue Event Template")
+        section_row = 0
+        section_row = self.labeled_combo(section, section_row, "Event Name", self.event_choice, EVENT_NAMES, width=34)
+        section_row = self.labeled_entry(section, section_row, "Main Line", self.event_main_line, width=50)
+        section_row = self.labeled_entry(section, section_row, "Repeat Line", self.event_repeat_line, width=50)
+        ttk.Button(section, text="Add Dialogue Event", command=self.add_dialogue_event_template).grid(row=section_row, column=1, sticky=tk.W, pady=2)
+
+        section, row = self.section(parent, row, "Dialogue Events JSON Array", expanded=False)
+        self.events_editor = JSONSchemaTextEditor(section, self.events_schema, [], height=12)
+        self.events_editor.grid(row=0, column=0, columnspan=3, sticky="nsew")
         self.action_buttons(parent, row, "Save Talking Card _talk.jldr2")
 
     def data(self):
@@ -922,15 +935,28 @@ class TalkingCardsTab(GeneratorTab):
 class JSONCardLoaderGeneratorApp:
     def __init__(self, root):
         self.root = root
+        self.appearance = AppearanceManager(root)
+        self.dark_mode = tk.BooleanVar(value=False)
         self.root.title("Inscryption JSONCardLoader Generator")
         self.root.geometry("1400x900")
         self.root.resizable(True, True)
+
+        toolbar = ttk.Frame(root, style="Toolbar.TFrame")
+        toolbar.pack(fill=tk.X, padx=5, pady=(5, 0))
+        ttk.Checkbutton(toolbar, text="Dark Mode", variable=self.dark_mode, command=self.toggle_theme).pack(
+            side=tk.RIGHT
+        )
+
         notebook = ttk.Notebook(root)
         notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         notebook.add(CardsTab(notebook), text="Cards")
         notebook.add(SigilsTab(notebook), text="Sigils")
         notebook.add(TribesTab(notebook), text="Tribes")
         notebook.add(TalkingCardsTab(notebook), text="Talking Cards")
+        self.appearance.apply("light")
+
+    def toggle_theme(self):
+        self.appearance.apply("dark" if self.dark_mode.get() else "light")
 
 
 def main():
