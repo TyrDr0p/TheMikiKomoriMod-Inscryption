@@ -297,6 +297,7 @@ class CardGeneratorApp:
 
         # Scrollable left form
         canvas = tk.Canvas(left_frame, borderwidth=0, highlightthickness=0)
+        self.card_form_canvas = canvas
         scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
 
@@ -440,8 +441,11 @@ class CardGeneratorApp:
         ttk.Button(scrollable_frame, text="Browse...", command=lambda: self.browse_image(self.portrait_path)).grid(row=row, column=2, sticky=tk.W, padx=5)
         row += 1
 
-        # Generate button
-        ttk.Button(scrollable_frame, text="Generate .jldr2 File", command=self.generate_card_json).grid(row=row, column=0, columnspan=2, pady=20)
+        # Actions
+        action_frame = ttk.Frame(scrollable_frame)
+        action_frame.grid(row=row, column=0, columnspan=2, pady=20, sticky=tk.W)
+        ttk.Button(action_frame, text="Generate .jldr2 File", command=self.generate_card_json).pack(side=tk.LEFT)
+        ttk.Button(action_frame, text="Reset Form", command=self.reset_card_form).pack(side=tk.LEFT, padx=(10, 0))
 
         # Bind updates
         self.card_id.trace('w', self.update_card_preview)
@@ -479,6 +483,36 @@ class CardGeneratorApp:
         )
         if file_path:
             path_var.set(file_path)
+
+    def reset_card_form(self):
+        self.card_id.set("Stoat")
+        self.mod_prefix.set("MyMod")
+        self.displayed_name.set("Stoat")
+        self.description.set("A cunning creature.")
+        self.base_attack.set(2)
+        self.base_health.set(2)
+        self.blood_cost.set(0)
+        self.bones_cost.set(0)
+        self.energy_cost.set(0)
+        self.gem_cost.set("None")
+        self.tribe.set("None")
+        self.temple.set("Nature")
+        self.special_stat_icon.set("None")
+        self.trait.set("None")
+        self.appearance_behaviour.set("None")
+        self.portrait_path.set("")
+        self.special_abilities.set("")
+
+        for var in self.meta_categories.values():
+            var.set(False)
+        for var in self.ability_vars.values():
+            var.set(False)
+        for var in self.special_triggered_vars.values():
+            var.set(False)
+
+        self.card_portrait_image = None
+        self.card_form_canvas.yview_moveto(0)
+        self.update_card_preview()
 
     def update_card_preview(self, *args):
         canvas = self.card_preview_canvas
