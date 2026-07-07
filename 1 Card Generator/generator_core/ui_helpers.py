@@ -82,15 +82,20 @@ class ResponsiveCheckboxGroup(ttk.Frame):
         self._layout_items()
 
     def _layout_items(self, _event=None):
-        columns = responsive_column_count(self.winfo_width(), self.preferred_columns, self.min_item_width)
+        item_width = self._minimum_column_width()
+        columns = responsive_column_count(self.winfo_width(), self.preferred_columns, item_width)
 
         for index in range(self.preferred_columns):
-            self.columnconfigure(index, weight=0)
+            self.columnconfigure(index, weight=0, minsize=0, uniform="")
         for index in range(columns):
-            self.columnconfigure(index, weight=1, uniform="checkbox")
+            self.columnconfigure(index, weight=0, minsize=item_width, uniform="")
 
         for index, checkbutton in enumerate(self.checkbuttons):
             checkbutton.grid(row=index // columns, column=index % columns, sticky=tk.W, padx=(0, 12), pady=1)
+
+    def _minimum_column_width(self):
+        requested_widths = [checkbutton.winfo_reqwidth() + 18 for checkbutton in self.checkbuttons]
+        return max([self.min_item_width, *requested_widths])
 
 
 class ToolTip:

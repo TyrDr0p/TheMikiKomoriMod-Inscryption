@@ -157,6 +157,7 @@ class ResponsiveLayoutTests(unittest.TestCase):
         self.assertEqual(4, responsive_column_count(1200, 4, 220))
         self.assertEqual(2, responsive_column_count(520, 4, 220))
         self.assertEqual(1, responsive_column_count(200, 4, 220))
+        self.assertEqual(1, responsive_column_count(700, 4, 360))
 
     def test_pane_default_uses_preview_ratio_when_space_allows(self):
         self.assertEqual(1120, default_sash_position(1400, 0.20, 700, 220))
