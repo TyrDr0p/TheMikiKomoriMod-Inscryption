@@ -44,7 +44,7 @@ Each tab includes a form, **Reset Form**, **Preview / Validate**, **Save**, and 
 
 For Cards, enter the unprefixed card ID and optional mod prefix. The generated JSON keeps `name` and `modPrefix` separate, matching JSONCardLoader's card schema.
 
-Enum-backed fields such as meta categories, abilities, special abilities, tribes, traits, appearance behaviours, gem costs, temples, emotions, and talking-card event names are selectable with checkboxes or dropdowns. The option lists are aligned with the SaxbyModEnums wiki where those enums apply.
+Enum-backed fields such as meta categories, abilities, special abilities, tribes, traits, appearance behaviours, gem costs, temples, emotions, and talking-card event names are selectable with checkboxes or dropdowns. The option lists are aligned with the SaxbyModEnums wiki where those enums apply, and described enum values show those descriptions as hover tooltips.
 
 For Sigils and Talking Cards, nested schema-backed JSON editors are included for advanced structures such as `abilityBehaviour`, emotions, and dialogue events. Use the dropdown template controls to add common emotion and dialogue entries, and use **Validate Nested JSON** inside those editors when changing nested data directly.
 

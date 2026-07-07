@@ -18,16 +18,24 @@ from generator_core.builders import (
 )
 from generator_core.constants import (
     ABILITIES,
+    ABILITY_TOOLTIPS,
     APPEARANCE_BEHAVIOURS,
+    APPEARANCE_BEHAVIOUR_TOOLTIPS,
     CARD_COMPLEXITIES,
+    CARD_COMPLEXITY_TOOLTIPS,
     EMOTION_TYPES,
     EVENT_NAMES,
     GEM_TYPES,
     META_CATEGORIES,
+    META_CATEGORY_TOOLTIPS,
+    SPECIAL_ABILITY_TOOLTIPS,
     SIGIL_BEHAVIOR_TEMPLATE,
     SPECIAL_STAT_ICONS,
+    SPECIAL_STAT_ICON_TOOLTIPS,
     SPECIAL_TRIGGERED_ABILITIES,
+    TEMPLE_TOOLTIPS,
     TEMPLES,
+    TRAIT_TOOLTIPS,
     TRAITS,
     TRIBES,
     VOICE_IDS,
@@ -79,11 +87,13 @@ class GeneratorTab(ttk.Frame):
         )
         return row + 1
 
-    def labeled_combo(self, parent, row, label, var, values, width=24):
+    def labeled_combo(self, parent, row, label, var, values, width=24, tooltips=None):
         ttk.Label(parent, text=label).grid(row=row, column=0, sticky=tk.W, pady=2)
-        ttk.Combobox(parent, textvariable=var, values=values, state="readonly", width=width).grid(
-            row=row, column=1, sticky=tk.W, pady=2
-        )
+        combo = ttk.Combobox(parent, textvariable=var, values=values, state="readonly", width=width)
+        combo.grid(row=row, column=1, sticky=tk.W, pady=2)
+        if tooltips:
+            tooltip = ToolTip(combo, tooltips.get(var.get(), ""))
+            var.trace_add("write", lambda *_args: setattr(tooltip, "text", tooltips.get(var.get(), "")))
         return row + 1
 
     def image_entry(self, parent, row, label, var):
@@ -99,7 +109,7 @@ class GeneratorTab(ttk.Frame):
         ttk.Button(frame, text=save_text, command=self.save).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(frame, text="Reset Form", command=self.reset).pack(side=tk.LEFT, padx=(8, 0))
 
-    def checkbox_group(self, parent, row, title, vars_by_key, columns=3, labels=None):
+    def checkbox_group(self, parent, row, title, vars_by_key, columns=3, labels=None, tooltips=None):
         ttk.Label(parent, text=title).grid(row=row, column=0, sticky=tk.NW, pady=(8, 2))
         frame = ttk.Frame(parent)
         frame.grid(row=row, column=1, columnspan=2, sticky=tk.W, pady=(8, 2))
@@ -107,10 +117,9 @@ class GeneratorTab(ttk.Frame):
             text = labels.get(key, key) if labels else key
             cb = ttk.Checkbutton(frame, text=text, variable=var)
             cb.grid(row=index // columns, column=index % columns, sticky=tk.W, padx=(0, 12))
-            if labels:
-                ability = next((item for item in ABILITIES if item["internal"] == key), None)
-                if ability:
-                    ToolTip(cb, ability["desc"])
+            tooltip = tooltips.get(key, "") if tooltips else ""
+            if tooltip:
+                ToolTip(cb, tooltip)
         return row + 1
 
     def selected(self, vars_by_key):
@@ -174,8 +183,8 @@ class CardsTab(GeneratorTab):
         row = self.labeled_entry(parent, row, "Mod Prefix", self.mod_prefix, width=20)
         row = self.labeled_entry(parent, row, "Displayed Name", self.displayed_name)
         row = self.labeled_entry(parent, row, "Description", self.description, width=50)
-        row = self.labeled_combo(parent, row, "Complexity", self.card_complexity, CARD_COMPLEXITIES)
-        row = self.labeled_combo(parent, row, "Temple", self.temple, TEMPLES)
+        row = self.labeled_combo(parent, row, "Complexity", self.card_complexity, CARD_COMPLEXITIES, tooltips=CARD_COMPLEXITY_TOOLTIPS)
+        row = self.labeled_combo(parent, row, "Temple", self.temple, TEMPLES, tooltips=TEMPLE_TOOLTIPS)
 
         ttk.Label(parent, text="Stats & Costs", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
         row += 1
@@ -191,12 +200,19 @@ class CardsTab(GeneratorTab):
         ttk.Label(parent, text="Categories", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
         row += 1
         row = self.checkbox_group(parent, row, "Tribes", self.tribe_vars, columns=3)
-        row = self.checkbox_group(parent, row, "Traits", self.trait_vars, columns=3)
-        row = self.labeled_combo(parent, row, "Special Stat Icon", self.special_stat_icon, ["None"] + SPECIAL_STAT_ICONS)
-        row = self.checkbox_group(parent, row, "Appearance Behaviours", self.appearance_vars, columns=3)
-        row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4)
-        row = self.checkbox_group(parent, row, "Abilities", self.ability_vars, columns=4, labels={a["internal"]: a["display"] for a in ABILITIES})
-        row = self.checkbox_group(parent, row, "Special Abilities", self.special_ability_vars, columns=4)
+        row = self.checkbox_group(parent, row, "Traits", self.trait_vars, columns=3, tooltips=TRAIT_TOOLTIPS)
+        row = self.labeled_combo(
+            parent, row, "Special Stat Icon", self.special_stat_icon, ["None"] + SPECIAL_STAT_ICONS,
+            tooltips=SPECIAL_STAT_ICON_TOOLTIPS,
+        )
+        row = self.checkbox_group(parent, row, "Appearance Behaviours", self.appearance_vars, columns=3, tooltips=APPEARANCE_BEHAVIOUR_TOOLTIPS)
+        row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4, tooltips=META_CATEGORY_TOOLTIPS)
+        row = self.checkbox_group(
+            parent, row, "Abilities", self.ability_vars, columns=4,
+            labels={a["internal"]: a["display"] for a in ABILITIES},
+            tooltips=ABILITY_TOOLTIPS,
+        )
+        row = self.checkbox_group(parent, row, "Special Abilities", self.special_ability_vars, columns=4, tooltips=SPECIAL_ABILITY_TOOLTIPS)
         row = self.labeled_entry(parent, row, "Custom Special Abilities (comma-separated)", self.custom_special, width=50)
 
         ttk.Label(parent, text="Optional Card Links", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
@@ -353,7 +369,7 @@ class SigilsTab(GeneratorTab):
         row = self.labeled_entry(parent, row, "Name", self.name)
         row = self.labeled_entry(parent, row, "GUID", self.guid)
         row = self.labeled_entry(parent, row, "Description", self.description, width=50)
-        row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4)
+        row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4, tooltips=META_CATEGORY_TOOLTIPS)
         row = self.image_entry(parent, row, "Texture", self.texture)
         row = self.image_entry(parent, row, "Pixel Texture", self.pixel_texture)
         row = self.labeled_spin(parent, row, "Power Level", self.power_level, to=99)
