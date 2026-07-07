@@ -40,6 +40,7 @@ from generator_core.constants import (  # noqa: E402
 from generator_core.appearance import BUNDLED_FONT_FILES, PALETTES, bundled_font_paths  # noqa: E402
 from generator_core.logging_config import (  # noqa: E402
     LOG_NAME,
+    close_logging_handlers,
     configure_debug_logging,
     debug_log_path,
     parse_cli_args,
@@ -188,10 +189,7 @@ class AppearanceTests(unittest.TestCase):
 
 class DebugLoggingTests(unittest.TestCase):
     def tearDown(self):
-        root_logger = logging.getLogger()
-        for handler in list(root_logger.handlers):
-            root_logger.removeHandler(handler)
-            handler.close()
+        close_logging_handlers()
 
     def test_debug_cli_switch_is_parsed(self):
         self.assertTrue(parse_cli_args(["--debug"]).debug)
@@ -211,6 +209,7 @@ class DebugLoggingTests(unittest.TestCase):
             content = path.read_text(encoding="utf-8")
             self.assertIn("Debug logging enabled", content)
             self.assertIn("debug file message", content)
+            close_logging_handlers()
 
     def test_debug_logging_works_without_console_streams(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -219,6 +218,7 @@ class DebugLoggingTests(unittest.TestCase):
                 logging.getLogger("test.debug").debug("no console message")
                 for handler in logging.getLogger().handlers:
                     handler.flush()
+                close_logging_handlers()
             self.assertIn("no console message", path.read_text(encoding="utf-8"))
 
 
