@@ -35,6 +35,7 @@ from generator_core.constants import (  # noqa: E402
 )
 from generator_core.scroll import mousewheel_units  # noqa: E402
 from generator_core.schemas import validate_output  # noqa: E402
+from generator_core.sigil_behavior import build_action, build_behavior_entry, merge_action  # noqa: E402
 
 
 class BuilderValidationTests(unittest.TestCase):
@@ -169,6 +170,55 @@ class EnumOptionTests(unittest.TestCase):
         self.assertNotIn("ActivatedRandomPowerBone", ABILITY_TOOLTIPS)
         self.assertIn("distance from the bell", SPECIAL_ABILITY_TOOLTIPS["BellProximity"])
         self.assertIn("rare background", APPEARANCE_BEHAVIOUR_TOOLTIPS["RareCardBackground"])
+
+
+class SigilBehaviorBuilderTests(unittest.TestCase):
+    def test_place_card_template_validates_as_sigil_behaviour(self):
+        behaviour = build_behavior_entry(
+            trigger_type="OnResolveOnBoard",
+            trigger_condition="[BaseCard.Health] > 0",
+            action_order=["placeCards"],
+            action_type="placeCards",
+            fields={
+                "slot_index": "([BaseCard.Slot.Index] + 1)",
+                "slot_opponent": False,
+                "card_name": "Rabbit",
+                "retain_mods": True,
+                "replace": False,
+            },
+        )
+        sigil = build_sigil_data(name="RabbitMaker", guid="MyMod", ability_behaviour=[behaviour])
+
+        self.assertEqual("OnResolveOnBoard", behaviour["trigger"]["triggerType"])
+        self.assertEqual("Rabbit", behaviour["placeCards"][0]["card"]["name"])
+        self.assertEqual([], validate_output("sigils", sigil))
+
+    def test_merge_action_adds_common_actions_to_existing_behaviour(self):
+        entry = {"trigger": {"triggerType": "OnActivate"}}
+        merge_action(
+            entry,
+            build_action(
+                "gainCurrency",
+                {"condition": "", "bones": "1", "energy": "", "foils": ""},
+            ),
+        )
+        merge_action(
+            entry,
+            build_action(
+                "showMessage",
+                {
+                    "message": "Bones gained.",
+                    "message_length": "2",
+                    "message_emotion": "Neutral",
+                    "letter_animation": "None",
+                    "speaker": "Leshy",
+                },
+            ),
+        )
+
+        self.assertEqual("1", entry["gainCurrency"]["bones"])
+        self.assertEqual("Bones gained.", entry["showMessage"]["message"])
+        self.assertEqual([], validate_output("sigils", build_sigil_data(name="BoneTalk", guid="MyMod", ability_behaviour=[entry])))
 
 
 if __name__ == "__main__":

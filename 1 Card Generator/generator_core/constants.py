@@ -281,3 +281,92 @@ SIGIL_BEHAVIOR_TEMPLATE = [
         }
     }
 ]
+
+CONFIGIL_TRIGGER_TYPES = [
+    "OnDie", "OnSacrifice", "OnResolveOnBoard", "OnLoad", "OnStruck",
+    "OnKill", "OnAttack", "OnPlayerStartOfTurn", "OnPlayerEndOfTurn",
+    "OnOpponentStartOfTurn", "OnOpponentEndOfTurn", "OnStartOfTurn",
+    "OnEndOfTurn", "OnDamage", "OnDamageDirectly", "OnHealthLevel",
+    "OnCombatStart", "OnEnemyCombatStart", "OnDetect", "OnAddedToHand",
+    "OnActivate", "OnPreDeath", "OnPreKill", "OnMove", "Passive",
+]
+
+CONFIGIL_TRIGGER_TOOLTIPS = {
+    "OnDie": "Activates when the card bearing the sigil perishes. Will not trigger when sacrificed.",
+    "OnSacrifice": "Activates when the card bearing the sigil is sacrificed.",
+    "OnResolveOnBoard": "Activates when the card bearing the sigil is played.",
+    "OnLoad": "Activates when the sigil becomes active, for example from a transformed card.",
+    "OnStruck": "Activates when the card bearing the sigil receives damage.",
+    "OnKill": "Activates when the card bearing the sigil kills another card.",
+    "OnAttack": "Activates when the card bearing the sigil performs an attack.",
+    "OnPlayerStartOfTurn": "Activates before you draw a card at the start of your turn.",
+    "OnPlayerEndOfTurn": "Activates after all your cards have attacked during combat.",
+    "OnOpponentStartOfTurn": "Activates before your opponent's cards attack during combat.",
+    "OnOpponentEndOfTurn": "Activates after all your opponent's cards have attacked during combat.",
+    "OnStartOfTurn": "Activates on the owner's start-of-turn trigger.",
+    "OnEndOfTurn": "Activates on the owner's end-of-turn trigger.",
+    "OnDamage": "Activates when the card bearing the sigil damages another card.",
+    "OnDamageDirectly": "Activates when the card bearing the sigil damages the opponent.",
+    "OnHealthLevel": "Activates when the card bearing the sigil is reduced to a specified health value or lower.",
+    "OnCombatStart": "Activates when combat starts after ringing the bell.",
+    "OnEnemyCombatStart": "Activates when the enemy's turn to attack begins.",
+    "OnDetect": "Activates when an enemy card moves into the opposing slot.",
+    "OnAddedToHand": "Activates when the card bearing the sigil is created in the player's hand.",
+    "OnActivate": "Defines the sigil as an activated one. Required for activationCost.",
+    "OnPreDeath": "Activates right before the card bearing the sigil would perish.",
+    "OnPreKill": "Activates right before the card bearing the sigil would kill another card.",
+    "OnMove": "Activates when the card bearing the sigil moves to another slot.",
+    "Passive": "Renders the sigil active every frame.",
+}
+
+CONFIGIL_ACTION_TYPES = [
+    "placeCards", "buffCards", "transformCards", "damageSlots", "attackSlots",
+    "extraAttacks", "gainCurrency", "dealScaleDamage", "drawCards",
+    "chooseSlots", "moveCards", "showMessage",
+]
+
+CONFIGIL_ACTION_TOOLTIPS = {
+    "placeCards": "Place cards directly on the board.",
+    "buffCards": "Buff or debuff cards already on the board.",
+    "transformCards": "Transform cards on the board into other cards.",
+    "damageSlots": "Directly damage slots; empty slots deal damage to the opponent.",
+    "attackSlots": "Make cards perform attacks against chosen slots.",
+    "extraAttacks": "Make cards perform additional attacks during combat.",
+    "gainCurrency": "Gain or lose resources such as bones, energy, or foils.",
+    "dealScaleDamage": "Deal direct damage to the scales.",
+    "drawCards": "Create cards directly in the owner's hand.",
+    "chooseSlots": "Allow the owner to manually choose slots for the effect.",
+    "moveCards": "Move cards around the board.",
+    "showMessage": "Display dialogue on screen.",
+}
+
+CONFIGIL_ACTION_ORDER = [
+    "chooseSlots", "showMessage", "gainCurrency", "dealScaleDamage",
+    "drawCards", "placeCards", "transformCards", "changeAppearance",
+    "buffCards", "moveCards", "damageSlots", "attackSlots",
+]
+
+CONFIGIL_FIELD_TOOLTIPS = {
+    "condition": "Optional expression. The effect only runs when this evaluates to true.",
+    "slot": "Slot index. Configils indexes slots from 0 on the far left to 3 on the far right. Expressions are allowed.",
+    "targetCard": "Specific card to affect. Variables such as [BaseCard] can be used.",
+    "card": "Internal card name to place, draw, or transform into.",
+    "retainMods": "Whether the created/transformed card retains stat buffs and transferred sigils.",
+    "replace": "Whether this effect can replace a card already in the target slot.",
+    "stats": "Stats are written as ATK/HP. Negative values reduce stats.",
+    "damage": "Amount of damage dealt by the effect. Expressions are allowed.",
+    "currency": "Positive values add resources. Negative values remove resources.",
+    "messageLength": "How many seconds the message should display. Default is 2.",
+}
+
+CONFIGIL_MESSAGE_EMOTIONS = ["Neutral", "Laughter", "Anger", "Quiet", "Surprise", "Curious"]
+CONFIGIL_LETTER_ANIMATIONS = ["Jitter", "WavyJitter", "None"]
+CONFIGIL_SPEAKERS = [
+    "Single", "Leshy", "Stoat", "Stinkbug", "Wolf", "Mushroom", "P03",
+    "Goo", "Trader", "P03Archivist", "P03Photographer", "P03Telegrapher",
+    "P03Canvas", "P03Librarians", "P03BountyHunter", "Grimora",
+    "Magnificus", "AnglerTalkingCard", "P03MycologistMain",
+    "P03MycologistSide", "Bonelord", "PirateSkull",
+]
+
+CONFIGIL_STRAFE_DIRECTIONS = ["normal", "right", "left"]
