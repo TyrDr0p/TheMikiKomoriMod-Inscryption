@@ -19,7 +19,20 @@ from generator_core.builders import (  # noqa: E402
     build_tribe_filename,
     build_tribes_data,
 )
-from generator_core.constants import ABILITY_OPTIONS, APPEARANCE_BEHAVIOURS, META_CATEGORIES, TRAITS  # noqa: E402
+from generator_core.constants import (  # noqa: E402
+    ABILITY_OPTIONS,
+    ABILITY_TOOLTIPS,
+    APPEARANCE_BEHAVIOUR_TOOLTIPS,
+    APPEARANCE_BEHAVIOURS,
+    CARD_COMPLEXITY_TOOLTIPS,
+    META_CATEGORIES,
+    META_CATEGORY_TOOLTIPS,
+    SPECIAL_ABILITY_TOOLTIPS,
+    SPECIAL_STAT_ICON_TOOLTIPS,
+    TEMPLE_TOOLTIPS,
+    TRAIT_TOOLTIPS,
+    TRAITS,
+)
 from generator_core.scroll import mousewheel_units  # noqa: E402
 from generator_core.schemas import validate_output  # noqa: E402
 
@@ -144,6 +157,18 @@ class EnumOptionTests(unittest.TestCase):
         self.assertIn("Lice", TRAITS)
         self.assertIn("MoonParticleEffects", APPEARANCE_BEHAVIOURS)
         self.assertIn("AscensionUnlock", META_CATEGORIES)
+
+    def test_tooltips_are_present_only_for_described_enum_values(self):
+        self.assertEqual("Defines the card to be a choice option.", META_CATEGORY_TOOLTIPS["ChoiceNode"])
+        self.assertNotIn("AscensionUnlock", META_CATEGORY_TOOLTIPS)
+        self.assertEqual("Will always be a learned card.", CARD_COMPLEXITY_TOOLTIPS["Vanilla"])
+        self.assertEqual("Will show up in act 3 and Tech card packs.", TEMPLE_TOOLTIPS["Tech"])
+        self.assertIn("attack and health", SPECIAL_STAT_ICON_TOOLTIPS["Bones"])
+        self.assertIn("Pelt Lice", TRAIT_TOOLTIPS["Lice"])
+        self.assertIn("opposing card", ABILITY_TOOLTIPS["ActivatedDealDamage"])
+        self.assertNotIn("ActivatedRandomPowerBone", ABILITY_TOOLTIPS)
+        self.assertIn("distance from the bell", SPECIAL_ABILITY_TOOLTIPS["BellProximity"])
+        self.assertIn("rare background", APPEARANCE_BEHAVIOUR_TOOLTIPS["RareCardBackground"])
 
 
 if __name__ == "__main__":
