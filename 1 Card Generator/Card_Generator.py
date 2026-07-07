@@ -2,7 +2,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json
 import os
-from PIL import Image, ImageTk  # optional – install with: pip install Pillow
+
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    Image = None
+    ImageTk = None
 
 # ------------------------------------------------------------
 # ENUMS & DATA
@@ -133,9 +138,12 @@ class ToolTip:
     def show(self, event=None):
         if self.tip_window or not self.text:
             return
-        x, y, _, _ = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + 25
+        if event is not None:
+            x = event.x_root + 15
+            y = event.y_root + 15
+        else:
+            x = self.widget.winfo_pointerx() + 15
+            y = self.widget.winfo_pointery() + 15
         self.tip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
@@ -409,7 +417,16 @@ class CardGeneratorApp:
 
         # Portrait
         img_path = self.portrait_path.get()
-        if img_path and os.path.exists(img_path):
+        if img_path and (Image is None or ImageTk is None):
+            canvas.create_text(
+                x0 + w//2,
+                y0 + 130,
+                text="Install Pillow to preview portraits.",
+                font=("Arial", 10),
+                fill="#7a3325",
+                width=w-50
+            )
+        elif img_path and os.path.exists(img_path):
             try:
                 pil_img = Image.open(img_path)
                 pil_img.thumbnail((150, 150))
@@ -1056,7 +1073,11 @@ class CardGeneratorApp:
 # ------------------------------------------------------------
 # MAIN
 # ------------------------------------------------------------
-if __name__ == "__main__":
+def main():
     root = tk.Tk()
     app = CardGeneratorApp(root)
     root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
