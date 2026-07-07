@@ -113,6 +113,85 @@ APPEARANCE_BEHAVIOURS = [
     "TerrainLayout", "RedEmission", "DefaultEmission", "MoonParticleEffects"
 ]
 
+
+def normalize_texture_path(texture_path):
+    if not texture_path:
+        return ""
+    normalized = texture_path.strip().replace("\\", "/")
+    if os.path.isabs(normalized):
+        return os.path.basename(normalized)
+    return normalized
+
+
+def build_card_data(
+    card_id,
+    mod_prefix,
+    displayed_name,
+    description,
+    base_attack,
+    base_health,
+    blood_cost,
+    bones_cost,
+    energy_cost,
+    gem_cost,
+    tribe,
+    temple,
+    trait,
+    special_stat_icon,
+    appearance_behaviour,
+    portrait_path,
+    meta_categories,
+    abilities,
+    special_abilities,
+):
+    card_data = {"name": card_id}
+
+    if mod_prefix:
+        card_data["modPrefix"] = mod_prefix
+
+    card_data.update({
+        "displayedName": displayed_name,
+        "description": description,
+    })
+
+    if meta_categories:
+        card_data["metaCategories"] = meta_categories
+
+    card_data.update({
+        "cardComplexity": "Vanilla",
+        "temple": temple if temple else "Nature",
+        "baseAttack": base_attack,
+        "baseHealth": base_health,
+    })
+
+    if blood_cost > 0:
+        card_data["bloodCost"] = blood_cost
+    if bones_cost > 0:
+        card_data["bonesCost"] = bones_cost
+    if energy_cost > 0:
+        card_data["energyCost"] = energy_cost
+    if gem_cost and gem_cost != "None":
+        card_data["gemsCost"] = [gem_cost]
+    if special_stat_icon and special_stat_icon != "None":
+        card_data["specialStatIcon"] = special_stat_icon
+    if tribe and tribe != "None":
+        card_data["tribes"] = [tribe]
+    if trait and trait != "None":
+        card_data["traits"] = [trait]
+    if special_abilities:
+        card_data["specialAbilities"] = special_abilities
+    if abilities:
+        card_data["abilities"] = abilities
+    if appearance_behaviour and appearance_behaviour != "None":
+        card_data["appearanceBehaviour"] = [appearance_behaviour]
+
+    texture = normalize_texture_path(portrait_path)
+    if texture:
+        card_data["texture"] = texture
+
+    return card_data
+
+
 # Talking Card enums
 VOICE_IDS = ["None", "female1_voice", "kobold_voice", "cat_voice"]
 EMOTION_TYPES = ["Laughter", "Anger", "Quiet", "Surprise", "Curious"]
@@ -537,9 +616,9 @@ class CardGeneratorApp:
             if " " in prefix:
                 messagebox.showerror("Error", "Mod prefix must not contain spaces.")
                 return
-            full_name = f"{prefix}_{card_id}"
+            suggested_filename = f"{prefix}_{card_id}"
         else:
-            full_name = card_id
+            suggested_filename = card_id
 
         displayed_name = self.displayed_name.get().strip() or "Unnamed"
         description = self.description.get().strip() or ""
@@ -561,49 +640,34 @@ class CardGeneratorApp:
         special_triggered = [sta for sta, var in self.special_triggered_vars.items() if var.get()]
         custom_special = [s.strip() for s in self.special_abilities.get().split(",") if s.strip()]
 
-        card_data = {
-            "name": full_name,
-            "displayedName": displayed_name,
-            "description": description,
-            "baseAttack": attack,
-            "baseHealth": health,
-            "bloodCost": blood,
-            "bonesCost": bones,
-            "energyCost": energy,
-            "temple": temple if temple else "Nature",
-            "metaCategories": meta_categories,
-            "abilities": abilities,
-        }
+        special_abilities = special_triggered + custom_special
 
-        if portrait:
-            card_data["portraitTexture"] = portrait
-        if tribe and tribe != "None":
-            card_data["tribes"] = [tribe]
-        if trait and trait != "None":
-            card_data["trait"] = trait
-        if gem and gem != "None":
-            card_data["gemCost"] = [gem]
-        if stat_icon and stat_icon != "None":
-            card_data["specialStatIcon"] = stat_icon
-        if appearance and appearance != "None":
-            card_data["appearanceBehaviour"] = appearance
-        if special_triggered:
-            card_data["specialTriggeredAbilities"] = special_triggered
-        if custom_special:
-            card_data["specialAbilities"] = custom_special
-
-        # Clean empty lists
-        if not card_data["metaCategories"]:
-            del card_data["metaCategories"]
-        if not card_data["abilities"]:
-            del card_data["abilities"]
-        if "tribes" in card_data and not card_data["tribes"]:
-            del card_data["tribes"]
+        card_data = build_card_data(
+            card_id=card_id,
+            mod_prefix=prefix,
+            displayed_name=displayed_name,
+            description=description,
+            base_attack=attack,
+            base_health=health,
+            blood_cost=blood,
+            bones_cost=bones,
+            energy_cost=energy,
+            gem_cost=gem,
+            tribe=tribe,
+            temple=temple,
+            trait=trait,
+            special_stat_icon=stat_icon,
+            appearance_behaviour=appearance,
+            portrait_path=portrait,
+            meta_categories=meta_categories,
+            abilities=abilities,
+            special_abilities=special_abilities,
+        )
 
         file_path = filedialog.asksaveasfilename(
             defaultextension=".jldr2",
             filetypes=[("JSON Card Loader 2", "*.jldr2"), ("All Files", "*.*")],
-            initialfile=f"{full_name}.jldr2"
+            initialfile=f"{suggested_filename}.jldr2"
         )
         if not file_path:
             return

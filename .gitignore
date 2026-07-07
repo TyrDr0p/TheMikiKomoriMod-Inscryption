@@ -16,6 +16,7 @@ env/
 build/
 dist/
 release/
+troubleshooting/
 *.spec
 
 # Editor and OS files
