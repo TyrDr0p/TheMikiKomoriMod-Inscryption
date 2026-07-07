@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+import logging
+
 from .schemas import normalize_asset_path, sanitize_filename, split_csv
+
+
+logger = logging.getLogger(__name__)
 
 
 def maybe_set(data: dict, key: str, value):
     if value not in ("", None, [], {}):
+        logger.debug("Setting optional key=%s value=%r", key, value)
         data[key] = value
 
 
 def maybe_positive(data: dict, key: str, value: int):
     if value > 0:
+        logger.debug("Setting positive key=%s value=%r", key, value)
         data[key] = value
 
 
@@ -91,12 +98,15 @@ def build_card_data(
     maybe_set(data, "titleGraphic", normalize_asset_path(title_graphic))
     maybe_set(data, "decals", [normalize_asset_path(item) for item in decals or []])
     maybe_set(data, "extensionProperties", extension_properties or {})
+    logger.debug("Built card data card_id=%s keys=%s data=%s", card_id, sorted(data), data)
     return data
 
 
 def build_card_filename(card_id: str, mod_prefix: str = "") -> str:
     base = f"{mod_prefix}_{card_id}" if mod_prefix else card_id
-    return f"{sanitize_filename(base, 'card')}.jldr2"
+    filename = f"{sanitize_filename(base, 'card')}.jldr2"
+    logger.debug("Built card filename card_id=%r mod_prefix=%r filename=%r", card_id, mod_prefix, filename)
+    return filename
 
 
 def build_sigil_data(
@@ -138,11 +148,14 @@ def build_sigil_data(
     maybe_set(activation, "gemsCost", activation_gems or [])
     maybe_set(data, "activationCost", activation)
     data["isSpecialAbility"] = is_special_ability
+    logger.debug("Built sigil data name=%s guid=%s keys=%s data=%s", name, guid, sorted(data), data)
     return data
 
 
 def build_sigil_filename(name: str) -> str:
-    return f"{sanitize_filename(name, 'sigil')}_sigil.jldr2"
+    filename = f"{sanitize_filename(name, 'sigil')}_sigil.jldr2"
+    logger.debug("Built sigil filename name=%r filename=%r", name, filename)
+    return filename
 
 
 def build_tribes_data(tribes: list[dict]) -> dict:
@@ -156,11 +169,15 @@ def build_tribes_data(tribes: list[dict]) -> dict:
         }
         maybe_set(item, "choiceCardBackTexture", normalize_asset_path(tribe.get("choiceCardBackTexture", "")))
         normalized.append(item)
-    return {"tribes": normalized}
+    data = {"tribes": normalized}
+    logger.debug("Built tribes data count=%s data=%s", len(normalized), data)
+    return data
 
 
 def build_tribe_filename(name: str) -> str:
-    return f"{sanitize_filename(name, 'tribes')}_tribe.jldr2"
+    filename = f"{sanitize_filename(name, 'tribes')}_tribe.jldr2"
+    logger.debug("Built tribe filename name=%r filename=%r", name, filename)
+    return filename
 
 
 def build_talking_card_data(
@@ -199,17 +216,21 @@ def build_talking_card_data(
         "dialogueEvents": dialogue_events or [],
     }
     maybe_set(data, "emotions", emotions or [])
+    logger.debug("Built talking card data card_name=%s keys=%s data=%s", card_name, sorted(data), data)
     return data
 
 
 def build_talking_filename(card_name: str) -> str:
-    return f"{sanitize_filename(card_name, 'talking_card')}_talk.jldr2"
+    filename = f"{sanitize_filename(card_name, 'talking_card')}_talk.jldr2"
+    logger.debug("Built talking card filename card_name=%r filename=%r", card_name, filename)
+    return filename
 
 
 def parse_lines(value: str) -> list[str]:
-    return [line.strip() for line in value.splitlines() if line.strip()]
+    result = [line.strip() for line in value.splitlines() if line.strip()]
+    logger.debug("Parsed lines count=%s", len(result))
+    return result
 
 
 def parse_csv(value: str) -> list[str]:
     return split_csv(value)
-

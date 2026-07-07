@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -50,6 +52,7 @@ from generator_core.constants import (
     VOICE_IDS,
 )
 from generator_core.appearance import AppearanceManager
+from generator_core.logging_config import configure_debug_logging, parse_cli_args
 from generator_core.schema_editor import JSONSchemaTextEditor
 from generator_core.schemas import load_schema
 from generator_core.scroll import ScrollableFrame
@@ -70,6 +73,7 @@ from generator_core.ui_helpers import (
 FORM_PANE_MIN_WIDTH = 700
 PREVIEW_PANE_MIN_WIDTH = 220
 PREVIEW_PANE_DEFAULT_RATIO = 0.20
+logger = logging.getLogger(__name__)
 
 
 class GeneratorTab(ttk.Frame):
@@ -80,6 +84,7 @@ class GeneratorTab(ttk.Frame):
         self.status = tk.StringVar(value="")
         self._pane_initialized = False
         self._pane_layout_pending = False
+        logger.debug("Initializing tab class=%s schema_kind=%s", self.__class__.__name__, self.schema_kind)
         self._build_layout()
 
     def _build_layout(self):
@@ -150,6 +155,14 @@ class GeneratorTab(ttk.Frame):
             self._pane_initialized = True
 
         if target_position != self.panes.sashpos(0):
+            logger.debug(
+                "Adjusting pane layout tab=%s total_width=%s old_sash=%s new_sash=%s initialized=%s",
+                self.__class__.__name__,
+                total_width,
+                self.panes.sashpos(0),
+                target_position,
+                self._pane_initialized,
+            )
             self.panes.sashpos(0, target_position)
 
     def section(self, parent, row, title, expanded=True):
@@ -220,6 +233,7 @@ class GeneratorTab(ttk.Frame):
         return [key for key, var in vars_by_key.items() if var.get()]
 
     def preview_data(self, data):
+        logger.debug("Previewing tab=%s schema_kind=%s data=%s", self.__class__.__name__, self.schema_kind, data)
         return update_json_preview(self.preview, self.status, self.schema_kind, data)
 
 
@@ -381,22 +395,27 @@ class CardsTab(GeneratorTab):
         )
 
     def refresh_preview(self):
+        logger.info("Refreshing card preview card_id=%s mod_prefix=%s", self.card_id.get(), self.mod_prefix.get())
         try:
             data = self.data()
         except json.JSONDecodeError as exc:
+            logger.warning("Card preview JSON parse error: %s", exc)
             self.status.set(f"Extension Properties JSON parse error: {exc}")
             return
         self.preview_data(data)
 
     def save(self):
+        logger.info("Saving card card_id=%s mod_prefix=%s", self.card_id.get(), self.mod_prefix.get())
         try:
             data = self.data()
         except json.JSONDecodeError as exc:
+            logger.warning("Card save blocked by JSON parse error: %s", exc)
             messagebox.showerror("JSON Error", f"Extension Properties JSON parse error: {exc}")
             return
         save_json_file("cards", data, build_card_filename(self.card_id.get(), self.mod_prefix.get()), "Card")
 
     def reset(self):
+        logger.info("Resetting Cards tab")
         self.card_id.set("Stoat")
         self.mod_prefix.set("MyMod")
         self.displayed_name.set("Stoat")
@@ -646,20 +665,25 @@ class SigilsTab(GeneratorTab):
         self.refresh_preview()
 
     def replace_behavior_from_builder(self):
+        logger.info("Replacing sigil behavior from builder name=%s action=%s trigger=%s", self.name.get(), self.action_type.get(), self.trigger_type.get())
         try:
             self.set_behavior([self.behavior_from_builder()])
         except (json.JSONDecodeError, ValueError) as exc:
+            logger.warning("Replace behavior failed: %s", exc)
             self.status.set(f"Behavior builder error: {exc}")
 
     def append_behavior_from_builder(self):
+        logger.info("Appending sigil behavior from builder name=%s action=%s trigger=%s", self.name.get(), self.action_type.get(), self.trigger_type.get())
         try:
             behavior = self.current_behavior()
             behavior.append(self.behavior_from_builder())
             self.set_behavior(behavior)
         except (json.JSONDecodeError, ValueError) as exc:
+            logger.warning("Append behavior failed: %s", exc)
             self.status.set(f"Behavior builder error: {exc}")
 
     def add_action_to_first_behavior(self):
+        logger.info("Adding action to first sigil behavior name=%s action=%s", self.name.get(), self.action_type.get())
         try:
             behavior = self.current_behavior()
             if not behavior:
@@ -670,6 +694,7 @@ class SigilsTab(GeneratorTab):
                 behavior[0]["actionOrder"] = order
             self.set_behavior(behavior)
         except (json.JSONDecodeError, ValueError) as exc:
+            logger.warning("Add action to first behavior failed: %s", exc)
             self.status.set(f"Behavior builder error: {exc}")
 
     def data(self):
@@ -693,20 +718,25 @@ class SigilsTab(GeneratorTab):
         )
 
     def refresh_preview(self):
+        logger.info("Refreshing sigil preview name=%s guid=%s", self.name.get(), self.guid.get())
         try:
             self.preview_data(self.data())
         except json.JSONDecodeError as exc:
+            logger.warning("Sigil preview JSON parse error: %s", exc)
             self.status.set(f"Ability Behaviour JSON parse error: {exc}")
 
     def save(self):
+        logger.info("Saving sigil name=%s guid=%s", self.name.get(), self.guid.get())
         try:
             data = self.data()
         except json.JSONDecodeError as exc:
+            logger.warning("Sigil save blocked by JSON parse error: %s", exc)
             messagebox.showerror("JSON Error", f"Ability Behaviour JSON parse error: {exc}")
             return
         save_json_file("sigils", data, build_sigil_filename(self.name.get()), "Sigil")
 
     def reset(self):
+        logger.info("Resetting Sigils tab")
         self.name.set("MySigil")
         self.guid.set("MyMod")
         self.description.set("")
@@ -806,20 +836,25 @@ class TribesTab(GeneratorTab):
         return build_tribes_data(tribes)
 
     def refresh_preview(self):
+        logger.info("Refreshing tribe preview name=%s guid=%s", self.name.get(), self.guid.get())
         try:
             self.preview_data(self.data())
         except json.JSONDecodeError as exc:
+            logger.warning("Tribe preview JSON parse error: %s", exc)
             self.status.set(f"Additional Tribes JSON parse error: {exc}")
 
     def save(self):
+        logger.info("Saving tribe name=%s guid=%s", self.name.get(), self.guid.get())
         try:
             data = self.data()
         except json.JSONDecodeError as exc:
+            logger.warning("Tribe save blocked by JSON parse error: %s", exc)
             messagebox.showerror("JSON Error", f"Additional Tribes JSON parse error: {exc}")
             return
         save_json_file("tribes", data, build_tribe_filename(self.name.get()), "Tribe")
 
     def reset(self):
+        logger.info("Resetting Tribes tab")
         self.name.set("MyTribe")
         self.guid.set("MyMod")
         self.tribe_icon.set("MyTribe.png")
@@ -919,12 +954,15 @@ class TalkingCardsTab(GeneratorTab):
         )
 
     def append_editor_item(self, editor, item, label):
+        logger.info("Appending talking-card editor item label=%s item=%s", label, item)
         try:
             value = editor.get_value()
         except json.JSONDecodeError as exc:
+            logger.warning("Talking-card %s editor parse error: %s", label, exc)
             self.status.set(f"{label} JSON parse error: {exc}")
             return
         if not isinstance(value, list):
+            logger.warning("Talking-card %s editor expected list, got %s", label, type(value).__name__)
             self.status.set(f"{label} JSON must be an array.")
             return
         value.append(item)
@@ -944,20 +982,25 @@ class TalkingCardsTab(GeneratorTab):
         )
 
     def refresh_preview(self):
+        logger.info("Refreshing talking-card preview card_name=%s", self.card_name.get())
         try:
             self.preview_data(self.data())
         except json.JSONDecodeError as exc:
+            logger.warning("Talking-card preview JSON parse error: %s", exc)
             self.status.set(f"Nested JSON parse error: {exc}")
 
     def save(self):
+        logger.info("Saving talking card card_name=%s", self.card_name.get())
         try:
             data = self.data()
         except json.JSONDecodeError as exc:
+            logger.warning("Talking-card save blocked by JSON parse error: %s", exc)
             messagebox.showerror("JSON Error", f"Nested JSON parse error: {exc}")
             return
         save_json_file("talking_cards", data, build_talking_filename(self.card_name.get()), "Talking card")
 
     def reset(self):
+        logger.info("Resetting Talking Cards tab")
         self.card_name.set("MyMod_Stoat")
         self.face_sprite.set("Face.png")
         self.eye_open.set("EyeOpen.png")
@@ -984,6 +1027,7 @@ class TalkingCardsTab(GeneratorTab):
 
 class JSONCardLoaderGeneratorApp:
     def __init__(self, root):
+        logger.info("Initializing JSONCardLoaderGeneratorApp")
         self.root = root
         self.appearance = AppearanceManager(root)
         self.dark_mode = tk.BooleanVar(value=False)
@@ -1004,16 +1048,33 @@ class JSONCardLoaderGeneratorApp:
         notebook.add(TribesTab(notebook), text="Tribes")
         notebook.add(TalkingCardsTab(notebook), text="Talking Cards")
         self.appearance.apply("light")
+        logger.info("Application UI initialized")
 
     def toggle_theme(self):
-        self.appearance.apply("dark" if self.dark_mode.get() else "light")
+        theme_name = "dark" if self.dark_mode.get() else "light"
+        logger.info("Theme toggle requested theme=%s", theme_name)
+        self.appearance.apply(theme_name)
 
 
-def main():
+def main(argv=None):
+    args = parse_cli_args(argv)
+    log_path = configure_debug_logging(args.debug)
+    if log_path:
+        logger.info("Debug log file active: %s", log_path)
+    logger.info("Starting Inscryption JSONCardLoader Generator")
     root = tk.Tk()
+
+    def report_callback_exception(exc_type, exc_value, exc_traceback):
+        logger.exception("Unhandled Tk callback exception", exc_info=(exc_type, exc_value, exc_traceback))
+        messagebox.showerror("Unexpected Error", f"{exc_type.__name__}: {exc_value}")
+
+    root.report_callback_exception = report_callback_exception
     JSONCardLoaderGeneratorApp(root)
-    root.mainloop()
+    try:
+        root.mainloop()
+    finally:
+        logger.info("Inscryption JSONCardLoader Generator stopped")
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

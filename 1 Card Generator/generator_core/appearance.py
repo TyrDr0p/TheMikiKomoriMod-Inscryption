@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.util
+import logging
 import platform
 from pathlib import Path
 import tkinter as tk
@@ -10,6 +11,8 @@ import tkinter.font as tkfont
 
 from .schemas import project_root
 
+
+logger = logging.getLogger(__name__)
 
 BASE_FONT_FAMILY = "DejaVu Sans"
 MONO_FONT_FAMILY = "DejaVu Sans Mono"
@@ -52,34 +55,44 @@ def fonts_dir() -> Path:
 
 def bundled_font_paths() -> list[Path]:
     directory = fonts_dir()
-    return [directory / filename for filename in BUNDLED_FONT_FILES if (directory / filename).exists()]
+    paths = [directory / filename for filename in BUNDLED_FONT_FILES if (directory / filename).exists()]
+    logger.debug("Bundled font paths directory=%s paths=%s", directory, paths)
+    return paths
 
 
 def register_bundled_fonts() -> bool:
     paths = bundled_font_paths()
     if not paths:
+        logger.warning("No bundled font files found in %s", fonts_dir())
         return False
 
     system = platform.system().lower()
+    logger.debug("Registering bundled fonts system=%s path_count=%s", system, len(paths))
     if system == "windows":
-        return _register_windows_fonts(paths)
-    if system == "darwin":
-        return _register_macos_fonts(paths)
-    if system == "linux":
-        return _register_linux_fonts(paths)
-    return False
+        result = _register_windows_fonts(paths)
+    elif system == "darwin":
+        result = _register_macos_fonts(paths)
+    elif system == "linux":
+        result = _register_linux_fonts(paths)
+    else:
+        result = False
+    logger.info("Bundled font registration system=%s success=%s", system, result)
+    return result
 
 
 def _register_windows_fonts(paths: list[Path]) -> bool:
     try:
         add_font = ctypes.windll.gdi32.AddFontResourceExW
     except AttributeError:
+        logger.exception("Windows AddFontResourceExW unavailable")
         return False
     add_font.argtypes = [ctypes.c_wchar_p, ctypes.c_uint, ctypes.c_void_p]
     add_font.restype = ctypes.c_int
     added = False
     for path in paths:
-        added = bool(add_font(str(path), 0x10, None)) or added
+        result = bool(add_font(str(path), 0x10, None))
+        logger.debug("Windows font registration path=%s success=%s", path, result)
+        added = result or added
     return added
 
 
@@ -88,6 +101,7 @@ def _register_macos_fonts(paths: list[Path]) -> bool:
         core_foundation = ctypes.CDLL("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
         core_text = ctypes.CDLL("/System/Library/Frameworks/CoreText.framework/CoreText")
     except OSError:
+        logger.exception("macOS CoreFoundation/CoreText unavailable for font registration")
         return False
 
     core_foundation.CFURLCreateFromFileSystemRepresentation.argtypes = [
@@ -106,8 +120,11 @@ def _register_macos_fonts(paths: list[Path]) -> bool:
         path_bytes = str(path).encode("utf-8")
         url = core_foundation.CFURLCreateFromFileSystemRepresentation(None, path_bytes, len(path_bytes), False)
         if not url:
+            logger.debug("macOS font URL creation failed path=%s", path)
             continue
-        added = bool(core_text.CTFontManagerRegisterFontsForURL(url, 1, None)) or added
+        result = bool(core_text.CTFontManagerRegisterFontsForURL(url, 1, None))
+        logger.debug("macOS font registration path=%s success=%s", path, result)
+        added = result or added
         core_foundation.CFRelease(url)
     return added
 
@@ -117,10 +134,13 @@ def _register_linux_fonts(paths: list[Path]) -> bool:
 
     library = ctypes.util.find_library("fontconfig")
     if not library:
+        logger.warning("fontconfig library not found; skipping Linux private font registration")
         return False
+    logger.debug("Using fontconfig library: %s", library)
     try:
         fontconfig = ctypes.CDLL(library)
     except OSError:
+        logger.exception("Failed to load fontconfig library: %s", library)
         return False
 
     fontconfig.FcConfigCreate.argtypes = []
@@ -134,28 +154,42 @@ def _register_linux_fonts(paths: list[Path]) -> bool:
 
     config = fontconfig.FcConfigCreate()
     if not config:
+        logger.warning("FcConfigCreate failed")
         return False
 
     added = False
     for path in paths:
-        added = bool(fontconfig.FcConfigAppFontAddFile(config, str(path).encode("utf-8"))) or added
+        result = bool(fontconfig.FcConfigAppFontAddFile(config, str(path).encode("utf-8")))
+        logger.debug("Linux private font registration path=%s success=%s", path, result)
+        added = result or added
     if not added:
+        logger.warning("No Linux bundled fonts were added to private Fontconfig config")
         return False
 
     if not fontconfig.FcConfigBuildFonts(config):
+        logger.warning("FcConfigBuildFonts failed")
         return False
     if not fontconfig.FcConfigSetCurrent(config):
+        logger.warning("FcConfigSetCurrent failed")
         return False
 
     _LINUX_FONTCONFIG_REF = (fontconfig, config)
+    logger.debug("Linux private Fontconfig config is current: %s", config)
     return True
 
 
 def configure_named_fonts(root: tk.Tk) -> tuple[str, str]:
-    register_bundled_fonts()
+    registration_success = register_bundled_fonts()
     families = {family.lower(): family for family in tkfont.families(root)}
     base_family = families.get(BASE_FONT_FAMILY.lower(), tkfont.nametofont("TkDefaultFont", root=root).actual("family"))
     mono_family = families.get(MONO_FONT_FAMILY.lower(), tkfont.nametofont("TkFixedFont", root=root).actual("family"))
+    logger.info(
+        "Configured Tk fonts base=%r mono=%r bundled_registration=%s available_family_count=%s",
+        base_family,
+        mono_family,
+        registration_success,
+        len(families),
+    )
 
     font_settings = {
         "TkDefaultFont": (base_family, 10),
@@ -171,7 +205,9 @@ def configure_named_fonts(root: tk.Tk) -> tuple[str, str]:
     for name, (family, size) in font_settings.items():
         try:
             tkfont.nametofont(name, root=root).configure(family=family, size=size)
+            logger.debug("Configured named font %s family=%s size=%s", name, family, size)
         except tk.TclError:
+            logger.exception("Failed to configure named font: %s", name)
             continue
     return base_family, mono_family
 
@@ -183,11 +219,14 @@ class AppearanceManager:
         self.base_family, self.mono_family = configure_named_fonts(root)
         try:
             self.style.theme_use("clam")
+            logger.debug("Using ttk theme: clam")
         except tk.TclError:
+            logger.exception("Failed to use ttk clam theme; keeping current theme")
             pass
 
     def apply(self, theme_name: str):
         palette = PALETTES.get(theme_name, PALETTES["light"])
+        logger.info("Applying appearance theme=%s", theme_name)
         self.root.configure(background=palette["bg"])
         self._apply_options(palette)
         self._apply_ttk_styles(palette)

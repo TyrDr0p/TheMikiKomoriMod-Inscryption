@@ -31,6 +31,14 @@ On Windows, activate the virtual environment with `.venv\Scripts\activate` inste
 
 Pillow is used only for image previews where available. JSON generation and schema validation use `jsonschema`.
 
+To capture very verbose troubleshooting logs, run the app with `--debug`:
+
+```bash
+python "1 Card Generator/Card_Generator.py" --debug
+```
+
+Debug mode writes detailed logs to `logs/InscryptionCardGenerator-debug-YYYYMMDD-HHMMSS.log` next to the source checkout or executable, and also prints standard progress messages to the console.
+
 ## Create JSONCardLoader Files
 
 Open the tab for the output type you want:

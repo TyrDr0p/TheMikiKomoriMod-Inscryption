@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 from .schemas import validate_output
+
+
+logger = logging.getLogger(__name__)
 
 
 class CollapsibleSection(ttk.Frame):
@@ -23,6 +27,7 @@ class CollapsibleSection(ttk.Frame):
 
     def toggle(self):
         self.expanded.set(not self.expanded.get())
+        logger.debug("Toggled section title=%r expanded=%s", self.title, self.expanded.get())
         self._sync()
 
     def _sync(self):
@@ -84,6 +89,17 @@ class ResponsiveCheckboxGroup(ttk.Frame):
     def _layout_items(self, _event=None):
         item_width = self._minimum_column_width()
         columns = responsive_column_count(self.winfo_width(), self.preferred_columns, item_width)
+        previous_columns = getattr(self, "_last_columns", None)
+        if previous_columns != columns:
+            logger.debug(
+                "Responsive checkbox layout changed width=%s item_width=%s preferred_columns=%s columns=%s item_count=%s",
+                self.winfo_width(),
+                item_width,
+                self.preferred_columns,
+                columns,
+                len(self.checkbuttons),
+            )
+            self._last_columns = columns
 
         for index in range(self.preferred_columns):
             self.columnconfigure(index, weight=0, minsize=0, uniform="")
@@ -132,19 +148,27 @@ class ToolTip:
 
 
 def choose_image(path_var):
+    logger.debug("Opening image picker")
     file_path = filedialog.askopenfilename(
         filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp *.gif"), ("All files", "*.*")]
     )
     if file_path:
+        logger.info("Selected image file: %s", file_path)
         path_var.set(file_path)
+    else:
+        logger.debug("Image picker cancelled")
 
 
 def choose_audio(path_var):
+    logger.debug("Opening audio picker")
     file_path = filedialog.askopenfilename(
         filetypes=[("Audio files", "*.mp3 *.wav *.ogg *.aiff *.aif"), ("All files", "*.*")]
     )
     if file_path:
+        logger.info("Selected audio file: %s", file_path)
         path_var.set(file_path)
+    else:
+        logger.debug("Audio picker cancelled")
 
 
 def set_text(widget: tk.Text, value: str):
@@ -156,18 +180,24 @@ def set_text(widget: tk.Text, value: str):
 
 def update_json_preview(text_widget: tk.Text, status_var: tk.StringVar, schema_kind: str, data: dict):
     formatted = json.dumps(data, indent=4, ensure_ascii=False)
+    logger.debug("Updating JSON preview kind=%s bytes=%s data=%s", schema_kind, len(formatted), formatted)
     set_text(text_widget, formatted)
     errors = validate_output(schema_kind, data)
     if errors:
         status_var.set("Validation errors: " + " | ".join(errors[:3]))
+        logger.info("Preview validation failed kind=%s error_count=%s first_errors=%s", schema_kind, len(errors), errors[:3])
     else:
         status_var.set("Valid JSONCardLoader output.")
+        logger.debug("Preview validation passed kind=%s", schema_kind)
     return errors
 
 
 def save_json_file(schema_kind: str, data: dict, initialfile: str, success_label: str):
+    logger.info("Save requested kind=%s initialfile=%s", schema_kind, initialfile)
+    logger.debug("Save data kind=%s data=%s", schema_kind, json.dumps(data, indent=2, ensure_ascii=False))
     errors = validate_output(schema_kind, data)
     if errors:
+        logger.warning("Save blocked by validation errors kind=%s error_count=%s errors=%s", schema_kind, len(errors), errors)
         messagebox.showerror("Validation Error", "\n".join(errors[:8]))
         return
     file_path = filedialog.asksaveasfilename(
@@ -176,10 +206,13 @@ def save_json_file(schema_kind: str, data: dict, initialfile: str, success_label
         initialfile=initialfile,
     )
     if not file_path:
+        logger.info("Save cancelled kind=%s", schema_kind)
         return
     try:
         with open(file_path, "w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=4, ensure_ascii=False)
+        logger.info("Saved %s to %s", success_label, file_path)
         messagebox.showinfo("Success", f"{success_label} saved to:\n{file_path}")
     except Exception as exc:
+        logger.exception("Failed to save %s to %s", success_label, file_path)
         messagebox.showerror("Error", f"Failed to save: {exc}")
