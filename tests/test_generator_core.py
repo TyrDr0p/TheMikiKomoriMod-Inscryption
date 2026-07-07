@@ -19,6 +19,7 @@ from generator_core.builders import (  # noqa: E402
     build_tribe_filename,
     build_tribes_data,
 )
+from generator_core.constants import ABILITY_OPTIONS, APPEARANCE_BEHAVIOURS, META_CATEGORIES, TRAITS  # noqa: E402
 from generator_core.scroll import mousewheel_units  # noqa: E402
 from generator_core.schemas import validate_output  # noqa: E402
 
@@ -132,6 +133,17 @@ class ScrollTests(unittest.TestCase):
         self.assertEqual(-3, mousewheel_units(SimpleNamespace(num=4, delta=0)))
         self.assertEqual(3, mousewheel_units(SimpleNamespace(num=5, delta=0)))
         self.assertEqual(0, mousewheel_units(SimpleNamespace(delta=0)))
+
+
+class EnumOptionTests(unittest.TestCase):
+    def test_vanilla_enum_options_include_saxby_values(self):
+        for ability in ("ActivatedDealDamage", "Deathtouch", "GuardDog", "SplitStrike", "DrawRabbits"):
+            self.assertIn(ability, ABILITY_OPTIONS)
+        self.assertNotIn("TouchOfDeath", ABILITY_OPTIONS)
+        self.assertNotIn("Guardian", ABILITY_OPTIONS)
+        self.assertIn("Lice", TRAITS)
+        self.assertIn("MoonParticleEffects", APPEARANCE_BEHAVIOURS)
+        self.assertIn("AscensionUnlock", META_CATEGORIES)
 
 
 if __name__ == "__main__":

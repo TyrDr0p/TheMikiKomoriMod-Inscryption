@@ -99,6 +99,23 @@ class GeneratorTab(ttk.Frame):
         ttk.Button(frame, text=save_text, command=self.save).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(frame, text="Reset Form", command=self.reset).pack(side=tk.LEFT, padx=(8, 0))
 
+    def checkbox_group(self, parent, row, title, vars_by_key, columns=3, labels=None):
+        ttk.Label(parent, text=title).grid(row=row, column=0, sticky=tk.NW, pady=(8, 2))
+        frame = ttk.Frame(parent)
+        frame.grid(row=row, column=1, columnspan=2, sticky=tk.W, pady=(8, 2))
+        for index, (key, var) in enumerate(vars_by_key.items()):
+            text = labels.get(key, key) if labels else key
+            cb = ttk.Checkbutton(frame, text=text, variable=var)
+            cb.grid(row=index // columns, column=index % columns, sticky=tk.W, padx=(0, 12))
+            if labels:
+                ability = next((item for item in ABILITIES if item["internal"] == key), None)
+                if ability:
+                    ToolTip(cb, ability["desc"])
+        return row + 1
+
+    def selected(self, vars_by_key):
+        return [key for key, var in vars_by_key.items() if var.get()]
+
     def preview_data(self, data):
         return update_json_preview(self.preview, self.status, self.schema_kind, data)
 
@@ -127,12 +144,9 @@ class CardsTab(GeneratorTab):
         self.energy_cost = tk.IntVar()
         self.gems_cost = {gem: tk.BooleanVar(value=False) for gem in GEM_TYPES}
         self.special_stat_icon = tk.StringVar()
-        self.tribe = tk.StringVar()
-        self.additional_tribes = tk.StringVar()
-        self.trait = tk.StringVar()
-        self.additional_traits = tk.StringVar()
-        self.appearance_behaviour = tk.StringVar()
-        self.additional_appearances = tk.StringVar()
+        self.tribe_vars = {tribe: tk.BooleanVar(value=False) for tribe in TRIBES}
+        self.trait_vars = {trait: tk.BooleanVar(value=False) for trait in TRAITS}
+        self.appearance_vars = {appearance: tk.BooleanVar(value=False) for appearance in APPEARANCE_BEHAVIOURS}
         self.meta_categories = {cat: tk.BooleanVar(value=False) for cat in META_CATEGORIES}
         self.ability_vars = {ability["internal"]: tk.BooleanVar(value=False) for ability in ABILITIES}
         self.special_ability_vars = {name: tk.BooleanVar(value=False) for name in SPECIAL_TRIGGERED_ABILITIES}
@@ -176,13 +190,10 @@ class CardsTab(GeneratorTab):
 
         ttk.Label(parent, text="Categories", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
         row += 1
-        row = self.labeled_combo(parent, row, "Tribe", self.tribe, ["None"] + TRIBES)
-        row = self.labeled_entry(parent, row, "Additional Tribes (comma-separated)", self.additional_tribes, width=50)
-        row = self.labeled_combo(parent, row, "Trait", self.trait, ["None"] + TRAITS, width=28)
-        row = self.labeled_entry(parent, row, "Additional Traits (comma-separated)", self.additional_traits, width=50)
+        row = self.checkbox_group(parent, row, "Tribes", self.tribe_vars, columns=3)
+        row = self.checkbox_group(parent, row, "Traits", self.trait_vars, columns=3)
         row = self.labeled_combo(parent, row, "Special Stat Icon", self.special_stat_icon, ["None"] + SPECIAL_STAT_ICONS)
-        row = self.labeled_combo(parent, row, "Appearance", self.appearance_behaviour, ["None"] + APPEARANCE_BEHAVIOURS, width=28)
-        row = self.labeled_entry(parent, row, "Additional Appearances (comma-separated)", self.additional_appearances, width=50)
+        row = self.checkbox_group(parent, row, "Appearance Behaviours", self.appearance_vars, columns=3)
         row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4)
         row = self.checkbox_group(parent, row, "Abilities", self.ability_vars, columns=4, labels={a["internal"]: a["display"] for a in ABILITIES})
         row = self.checkbox_group(parent, row, "Special Abilities", self.special_ability_vars, columns=4)
@@ -218,23 +229,6 @@ class CardsTab(GeneratorTab):
         row += 1
         self.action_buttons(parent, row, "Save Card .jldr2")
 
-    def checkbox_group(self, parent, row, title, vars_by_key, columns=3, labels=None):
-        ttk.Label(parent, text=title).grid(row=row, column=0, sticky=tk.NW, pady=(8, 2))
-        frame = ttk.Frame(parent)
-        frame.grid(row=row, column=1, columnspan=2, sticky=tk.W, pady=(8, 2))
-        for index, (key, var) in enumerate(vars_by_key.items()):
-            text = labels.get(key, key) if labels else key
-            cb = ttk.Checkbutton(frame, text=text, variable=var)
-            cb.grid(row=index // columns, column=index % columns, sticky=tk.W, padx=(0, 12))
-            if labels:
-                ability = next((item for item in ABILITIES if item["internal"] == key), None)
-                if ability:
-                    ToolTip(cb, ability["desc"])
-        return row + 1
-
-    def selected(self, vars_by_key):
-        return [key for key, var in vars_by_key.items() if var.get()]
-
     def data(self):
         extension_text = self.extension_properties.get("1.0", tk.END).strip()
         extension_properties = json.loads(extension_text) if extension_text else {}
@@ -254,8 +248,8 @@ class CardsTab(GeneratorTab):
             energy_cost=self.energy_cost.get(),
             gems_cost=self.selected(self.gems_cost),
             special_stat_icon="" if self.special_stat_icon.get() == "None" else self.special_stat_icon.get(),
-            tribes=([] if self.tribe.get() == "None" else [self.tribe.get()]) + parse_csv(self.additional_tribes.get()),
-            traits=([] if self.trait.get() == "None" else [self.trait.get()]) + parse_csv(self.additional_traits.get()),
+            tribes=self.selected(self.tribe_vars),
+            traits=self.selected(self.trait_vars),
             special_abilities=self.selected(self.special_ability_vars) + parse_csv(self.custom_special.get()),
             abilities=self.selected(self.ability_vars),
             evolve_into_name=self.evolve_into_name.get().strip(),
@@ -266,9 +260,7 @@ class CardsTab(GeneratorTab):
             ice_cube_name=self.ice_cube_name.get().strip(),
             flip_portrait_for_strafe=self.flip_portrait_for_strafe.get(),
             one_per_deck=self.one_per_deck.get(),
-            appearance_behaviour=(
-                [] if self.appearance_behaviour.get() == "None" else [self.appearance_behaviour.get()]
-            ) + parse_csv(self.additional_appearances.get()),
+            appearance_behaviour=self.selected(self.appearance_vars),
             texture=self.texture.get().strip(),
             emission_texture=self.emission_texture.get().strip(),
             alt_texture=self.alt_texture.get().strip(),
@@ -309,14 +301,13 @@ class CardsTab(GeneratorTab):
         self.bones_cost.set(0)
         self.energy_cost.set(0)
         self.special_stat_icon.set("None")
-        self.tribe.set("None")
-        self.trait.set("None")
-        self.appearance_behaviour.set("None")
-        for group in (self.gems_cost, self.meta_categories, self.ability_vars, self.special_ability_vars):
+        for group in (
+            self.gems_cost, self.tribe_vars, self.trait_vars, self.appearance_vars,
+            self.meta_categories, self.ability_vars, self.special_ability_vars,
+        ):
             for var in group.values():
                 var.set(False)
         for var in (
-            self.additional_tribes, self.additional_traits, self.additional_appearances,
             self.custom_special, self.evolve_into_name, self.default_evolution_name, self.tail_name,
             self.tail_lost_portrait, self.ice_cube_name, self.texture, self.emission_texture,
             self.alt_texture, self.alt_emission_texture, self.pixel_texture, self.title_graphic, self.decals,
@@ -344,7 +335,7 @@ class SigilsTab(GeneratorTab):
         self.name = tk.StringVar()
         self.guid = tk.StringVar()
         self.description = tk.StringVar()
-        self.meta_categories = tk.StringVar()
+        self.meta_categories = {cat: tk.BooleanVar(value=False) for cat in META_CATEGORIES}
         self.texture = tk.StringVar()
         self.pixel_texture = tk.StringVar()
         self.power_level = tk.IntVar()
@@ -362,7 +353,7 @@ class SigilsTab(GeneratorTab):
         row = self.labeled_entry(parent, row, "Name", self.name)
         row = self.labeled_entry(parent, row, "GUID", self.guid)
         row = self.labeled_entry(parent, row, "Description", self.description, width=50)
-        row = self.labeled_entry(parent, row, "Meta Categories (comma-separated)", self.meta_categories, width=50)
+        row = self.checkbox_group(parent, row, "Meta Categories", self.meta_categories, columns=4)
         row = self.image_entry(parent, row, "Texture", self.texture)
         row = self.image_entry(parent, row, "Pixel Texture", self.pixel_texture)
         row = self.labeled_spin(parent, row, "Power Level", self.power_level, to=99)
@@ -401,7 +392,7 @@ class SigilsTab(GeneratorTab):
             name=self.name.get().strip(),
             guid=self.guid.get().strip(),
             description=self.description.get().strip(),
-            meta_categories=parse_csv(self.meta_categories.get()),
+            meta_categories=self.selected(self.meta_categories),
             texture=self.texture.get().strip(),
             pixel_texture=self.pixel_texture.get().strip(),
             power_level=self.power_level.get(),
@@ -434,7 +425,6 @@ class SigilsTab(GeneratorTab):
         self.name.set("MySigil")
         self.guid.set("MyMod")
         self.description.set("")
-        self.meta_categories.set("")
         self.texture.set("MySigil.png")
         self.pixel_texture.set("")
         self.power_level.set(0)
@@ -445,6 +435,8 @@ class SigilsTab(GeneratorTab):
         self.bones_cost.set(0)
         self.energy_cost.set(0)
         self.blood_cost.set(0)
+        for var in self.meta_categories.values():
+            var.set(False)
         for var in self.gems_cost.values():
             var.set(False)
         self.behavior_editor.set_value(SIGIL_BEHAVIOR_TEMPLATE)
@@ -546,6 +538,10 @@ class TalkingCardsTab(GeneratorTab):
         self.voice_id = tk.StringVar()
         self.voice_pitch = tk.DoubleVar()
         self.custom_voice = tk.StringVar()
+        self.emotion_choice = tk.StringVar()
+        self.event_choice = tk.StringVar()
+        self.event_main_line = tk.StringVar()
+        self.event_repeat_line = tk.StringVar()
         row = 0
         ttk.Label(parent, text="Talking Card Sprites", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W)
         row += 1
@@ -565,11 +561,26 @@ class TalkingCardsTab(GeneratorTab):
         ttk.Button(parent, text="Browse...", command=lambda: choose_audio(self.custom_voice)).grid(row=row, column=2, sticky=tk.W, padx=5)
         row += 1
 
+        ttk.Label(parent, text="Emotion Template", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
+        row += 1
+        row = self.labeled_combo(parent, row, "Emotion", self.emotion_choice, EMOTION_TYPES)
+        ttk.Button(parent, text="Add Emotion", command=self.add_emotion_template).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+
         ttk.Label(parent, text="Emotions JSON Array", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
         row += 1
         self.emotions_editor = JSONSchemaTextEditor(parent, self.emotions_schema, [], height=8)
         self.emotions_editor.grid(row=row, column=0, columnspan=3, sticky="nsew")
         row += 1
+
+        ttk.Label(parent, text="Dialogue Event Template", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
+        row += 1
+        row = self.labeled_combo(parent, row, "Event Name", self.event_choice, EVENT_NAMES, width=34)
+        row = self.labeled_entry(parent, row, "Main Line", self.event_main_line, width=50)
+        row = self.labeled_entry(parent, row, "Repeat Line", self.event_repeat_line, width=50)
+        ttk.Button(parent, text="Add Dialogue Event", command=self.add_dialogue_event_template).grid(row=row, column=1, sticky=tk.W, pady=2)
+        row += 1
+
         ttk.Label(parent, text="Dialogue Events JSON Array", font=("Arial", 12, "bold")).grid(row=row, column=0, columnspan=3, sticky=tk.W, pady=(10, 2))
         row += 1
         self.events_editor = JSONSchemaTextEditor(parent, self.events_schema, [], height=12)
@@ -593,6 +604,31 @@ class TalkingCardsTab(GeneratorTab):
             custom_voice=self.custom_voice.get().strip(),
             emotions=self.emotions_editor.get_value(),
             dialogue_events=self.events_editor.get_value(),
+        )
+
+    def append_editor_item(self, editor, item, label):
+        try:
+            value = editor.get_value()
+        except json.JSONDecodeError as exc:
+            self.status.set(f"{label} JSON parse error: {exc}")
+            return
+        if not isinstance(value, list):
+            self.status.set(f"{label} JSON must be an array.")
+            return
+        value.append(item)
+        editor.set_value(value)
+        self.refresh_preview()
+
+    def add_emotion_template(self):
+        self.append_editor_item(self.emotions_editor, {"emotion": self.emotion_choice.get()}, "Emotions")
+
+    def add_dialogue_event_template(self):
+        main_line = self.event_main_line.get().strip() or "Hello."
+        repeat_line = self.event_repeat_line.get().strip() or main_line
+        self.append_editor_item(
+            self.events_editor,
+            {"eventName": self.event_choice.get(), "mainLines": [main_line], "repeatLines": [[repeat_line]]},
+            "Dialogue Events",
         )
 
     def refresh_preview(self):
@@ -622,6 +658,10 @@ class TalkingCardsTab(GeneratorTab):
         self.voice_id.set("None")
         self.voice_pitch.set(1.0)
         self.custom_voice.set("")
+        self.emotion_choice.set(EMOTION_TYPES[0])
+        self.event_choice.set(EVENT_NAMES[0])
+        self.event_main_line.set("Hello.")
+        self.event_repeat_line.set("Hello again.")
         self.emotions_editor.set_value([])
         self.events_editor.set_value([
             {"eventName": "OnDrawn", "mainLines": ["Hello."], "repeatLines": [["Hello again."]]}
