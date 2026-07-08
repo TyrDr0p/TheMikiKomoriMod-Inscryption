@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
 import tkinter as tk
 from tkinter import ttk
+
+
+logger = logging.getLogger(__name__)
 
 
 def mousewheel_units(event) -> int:
@@ -40,7 +44,11 @@ class ScrollableFrame(ttk.Frame):
         self.canvas.itemconfigure(self.window_id, width=event.width)
 
     def _pointer_inside(self) -> bool:
-        widget = self.winfo_containing(self.winfo_pointerx(), self.winfo_pointery())
+        try:
+            widget = self.winfo_containing(self.winfo_pointerx(), self.winfo_pointery())
+        except (KeyError, tk.TclError) as exc:
+            logger.debug("Ignoring mousewheel over non-app Tk window: %s", exc)
+            return False
         while widget is not None:
             if widget is self:
                 return True
