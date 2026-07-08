@@ -45,7 +45,7 @@ from generator_core.logging_config import (  # noqa: E402
     debug_log_path,
     parse_cli_args,
 )
-from generator_core.scroll import mousewheel_units  # noqa: E402
+from generator_core.scroll import ScrollableFrame, mousewheel_units  # noqa: E402
 from generator_core.schemas import validate_output  # noqa: E402
 from generator_core.sigil_behavior import build_action, build_behavior_entry, merge_action  # noqa: E402
 from generator_core.ui_helpers import clamp_sash_position, default_sash_position, responsive_column_count  # noqa: E402
@@ -160,6 +160,18 @@ class ScrollTests(unittest.TestCase):
         self.assertEqual(-3, mousewheel_units(SimpleNamespace(num=4, delta=0)))
         self.assertEqual(3, mousewheel_units(SimpleNamespace(num=5, delta=0)))
         self.assertEqual(0, mousewheel_units(SimpleNamespace(delta=0)))
+
+    def test_pointer_inside_ignores_unknown_tk_popdown_widgets(self):
+        def raise_popdown_key_error(*_args):
+            raise KeyError("popdown")
+
+        frame = SimpleNamespace(
+            winfo_containing=raise_popdown_key_error,
+            winfo_pointerx=lambda: 0,
+            winfo_pointery=lambda: 0,
+        )
+
+        self.assertFalse(ScrollableFrame._pointer_inside(frame))
 
 
 class ResponsiveLayoutTests(unittest.TestCase):

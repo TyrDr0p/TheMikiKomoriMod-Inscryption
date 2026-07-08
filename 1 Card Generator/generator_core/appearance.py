@@ -276,6 +276,27 @@ class AppearanceManager:
             insertcolor=palette["fg"],
             bordercolor=palette["border"],
         )
+        self.style.map(
+            "TEntry",
+            fieldbackground=[("readonly", palette["field"]), ("!disabled", palette["field"])],
+            foreground=[("readonly", palette["fg"]), ("!disabled", palette["fg"])],
+        )
+        self.style.configure(
+            "TSpinbox",
+            fieldbackground=palette["field"],
+            background=palette["button"],
+            foreground=palette["fg"],
+            insertcolor=palette["fg"],
+            arrowcolor=palette["fg"],
+            bordercolor=palette["border"],
+        )
+        self.style.map(
+            "TSpinbox",
+            fieldbackground=[("readonly", palette["field"]), ("!disabled", palette["field"])],
+            foreground=[("readonly", palette["fg"]), ("!disabled", palette["fg"])],
+            background=[("active", palette["button_active"])],
+            arrowcolor=[("disabled", palette["muted"]), ("!disabled", palette["fg"])],
+        )
         self.style.configure(
             "TCombobox",
             fieldbackground=palette["field"],
